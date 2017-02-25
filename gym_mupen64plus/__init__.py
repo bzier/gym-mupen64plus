@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 ##### MUSHROOM CUP ####
 register(
     id='Mario-Kart-Luigi-Raceway-v0',
-    entry_point='gym_mario_kart.envs:MarioKartLuigiRacewayEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartLuigiRacewayEnv',
     tags={
         'mupen': True,
         'cup': 'Mushroom',
@@ -18,7 +18,7 @@ register(
 
 register(
     id='Mario-Kart-Moo-Moo-Farm-v0',
-    entry_point='gym_mario_kart.envs:MarioKartMooMooFarmEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartMooMooFarmEnv',
     tags={
         'mupen': True,
         'cup': 'Mushroom',
@@ -29,7 +29,7 @@ register(
 
 register(
     id='Mario-Kart-Koopa-Troopa-Beach-v0',
-    entry_point='gym_mario_kart.envs:MarioKartKoopaTroopaBeachEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartKoopaTroopaBeachEnv',
     tags={
         'mupen': True,
         'cup': 'Mushroom',
@@ -40,7 +40,7 @@ register(
 
 register(
     id='Mario-Kart-Kalimari-Desert-v0',
-    entry_point='gym_mario_kart.envs:MarioKartKalimariDesertEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartKalimariDesertEnv',
     tags={
         'mupen': True,
         'cup': 'Mushroom',
@@ -52,7 +52,7 @@ register(
 ##### FLOWER CUP ####
 register(
     id='Mario-Kart-Toads-Turnpike-v0',
-    entry_point='gym_mario_kart.envs:MarioKartToadsTurnpikeEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartToadsTurnpikeEnv',
     tags={
         'mupen': True,
         'cup': 'Flower',
@@ -63,7 +63,7 @@ register(
 
 register(
     id='Mario-Kart-Frappe-Snowland-v0',
-    entry_point='gym_mario_kart.envs:MarioKartFrappeSnowlandEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartFrappeSnowlandEnv',
     tags={
         'mupen': True,
         'cup': 'Flower',
@@ -74,7 +74,7 @@ register(
 
 register(
     id='Mario-Kart-Choco-Mountain-v0',
-    entry_point='gym_mario_kart.envs:MarioKartChocoMountainEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartChocoMountainEnv',
     tags={
         'mupen': True,
         'cup': 'Flower',
@@ -85,7 +85,7 @@ register(
 
 register(
     id='Mario-Kart-Mario-Raceway-v0',
-    entry_point='gym_mario_kart.envs:MarioKartMarioRacewayEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartMarioRacewayEnv',
     tags={
         'mupen': True,
         'cup': 'Flower',
@@ -97,7 +97,7 @@ register(
 ##### STAR CUP ####
 register(
     id='Mario-Kart-Wario-Stadium-v0',
-    entry_point='gym_mario_kart.envs:MarioKartWarioStadiumEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartWarioStadiumEnv',
     tags={
         'mupen': True,
         'cup': 'Star',
@@ -108,7 +108,7 @@ register(
 
 register(
     id='Mario-Kart-Sherbet-Land-v0',
-    entry_point='gym_mario_kart.envs:MarioKartSherbetLandEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartSherbetLandEnv',
     tags={
         'mupen': True,
         'cup': 'Star',
@@ -119,7 +119,7 @@ register(
 
 register(
     id='Mario-Kart-Royal-Raceway-v0',
-    entry_point='gym_mario_kart.envs:MarioKartRoyalRacewayEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartRoyalRacewayEnv',
     tags={
         'mupen': True,
         'cup': 'Star',
@@ -130,7 +130,7 @@ register(
 
 register(
     id='Mario-Kart-Bowsers-Castle-v0',
-    entry_point='gym_mario_kart.envs:MarioKartBowsersCastleEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartBowsersCastleEnv',
     tags={
         'mupen': True,
         'cup': 'Star',
@@ -142,7 +142,7 @@ register(
 ##### SPECIAL CUP ####
 register(
     id='Mario-Kart-DKs-Jungle-Parkway-v0',
-    entry_point='gym_mario_kart.envs:MarioKartDKsJungleParkwayEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartDKsJungleParkwayEnv',
     tags={
         'mupen': True,
         'cup': 'Special',
@@ -153,7 +153,7 @@ register(
 
 register(
     id='Mario-Kart-Yoshi-Valley-v0',
-    entry_point='gym_mario_kart.envs:MarioKartYoshiValleyEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartYoshiValleyEnv',
     tags={
         'mupen': True,
         'cup': 'Special',
@@ -164,7 +164,7 @@ register(
 
 register(
     id='Mario-Kart-BansheeBoardwalk-v0',
-    entry_point='gym_mario_kart.envs:MarioKartBansheeBoardwalkEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartBansheeBoardwalkEnv',
     tags={
         'mupen': True,
         'cup': 'Special',
@@ -175,7 +175,7 @@ register(
 
 register(
     id='Mario-Kart-Rainbow-Road-v0',
-    entry_point='gym_mario_kart.envs:MarioKartRainbowRoadEnv',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartRainbowRoadEnv',
     tags={
         'mupen': True,
         'cup': 'Special',

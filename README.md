@@ -1,4 +1,4 @@
-# gym-mario-kart
+# gym-mupen64plus
 
 The [environment](https://github.com/kevinhughes27/TensorKart) is a multiagent
 domain featuring continuous state and action spaces. Currently,
@@ -19,6 +19,6 @@ The ...
 # Installation
 
 ```bash
-cd gym-mario-kart
+cd gym-mupen64plus
 pip install -e .
 ```

@@ -1,6 +1,6 @@
 import abc
 from termcolor import cprint
-from gym_mario_kart.envs.mupen64plus_env import Mupen64PlusEnv, Config, INTERNAL_STATE, IMAGE_HELPER
+from gym_mupen64plus.envs.mupen64plus_env import Mupen64PlusEnv, Config, INTERNAL_STATE, IMAGE_HELPER
 
 ###############################################
 class MarioKartEnv(Mupen64PlusEnv):

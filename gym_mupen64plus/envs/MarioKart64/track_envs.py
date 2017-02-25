@@ -1,4 +1,4 @@
-from gym_mario_kart.envs.mario_kart_env import MarioKartEnv
+from gym_mupen64plus.envs.MarioKart64.mario_kart_env import MarioKartEnv
 
 class MarioKartLuigiRacewayEnv(MarioKartEnv):
     MAP_SERIES = 0
