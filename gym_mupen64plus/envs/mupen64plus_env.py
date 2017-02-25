@@ -2,6 +2,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 import abc
 import array
+import inspect
 import os
 import signal
 import subprocess
@@ -9,6 +10,7 @@ import threading
 import time
 import pygame
 from termcolor import cprint
+import yaml
 
 import gym
 from gym import error, spaces, utils
@@ -19,35 +21,8 @@ import numpy as np
 import wx
 wx.App()
 
+config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "config.yml")))
 
-###############################################
-class Config:
-    PORT_NUMBER = 8082
-
-    SCR_W = 640
-    SCR_H = 480
-    SCR_D = 3
-
-    DST_W = 640
-    DST_H = 480
-    DST_D = 3
-
-    OFFSET_X = 400
-    OFFSET_Y = 240
-
-    ACTION_TIMEOUT = 5
-
-    NOOP = [0, 0, 0, 0, 0]
-    A_BUTTON = [0, 0, 1, 0, 0]
-    B_BUTTON = [0, 0, 0, 1, 0]
-    RB_BUTTON = [0, 0, 0, 0, 1]
-    JOYSTICK_UP = [0, 80, 0, 0, 0]
-    JOYSTICK_DOWN = [0, -80, 0, 0, 0]
-    JOYSTICK_LEFT = [-80, 0, 0, 0, 0]
-    JOYSTICK_RIGHT = [80, 0, 0, 0, 0]
-
-    MUPEN_CMD = 'mupen64plus'
-    INPUT_DRIVER_PATH = '/home/brian/Programming/mupen64plus/mupen64plus-input-bot/mupen64plus-input-bot.so'
 
 
 ###############################################
@@ -59,13 +34,13 @@ class InternalState:
         self.end_episode_confidence = 0
         self.is_end_episode = False
         self.numpy_array = None
-        self.pixel_array = array.array('B', [0] * (Config.SCR_W * Config.SCR_H * Config.SCR_D))
+        self.pixel_array = array.array('B', [0] * (config['SCR_W'] * config['SCR_H'] * config['SCR_D']))
 
 
 ###############################################
 class ImageHelper:
     def GetPixelColor(self, image_array, x, y):
-        base_pixel = (x + (y * Config.SCR_W)) * 3
+        base_pixel = (x + (y * config['SCR_W'])) * 3
         red = image_array[base_pixel + 0]
         green = image_array[base_pixel + 1]
         blue = image_array[base_pixel + 2]
@@ -120,7 +95,7 @@ class Mupen64PlusEnv(gym.Env):
         self.emulator_process = None
         self._configure_environment(rom_path)
         self.observation_space = spaces.Box(low=0, high=255,
-                                            shape=(Config.SCR_H, Config.SCR_W, Config.SCR_D))
+                                            shape=(config['SCR_H'], config['SCR_W'], config['SCR_D']))
 
         self.action_space = spaces.Tuple((spaces.Box(low=-80, high=80, shape=1), # Joystick X-axis
                                           spaces.Box(low=-80, high=80, shape=1), # Joystick Y-axis
@@ -144,7 +119,7 @@ class Mupen64PlusEnv(gym.Env):
 
         # Wait for action to be taken:
         start = time.time()
-        while INTERNAL_STATE.take_action and time.time() < start + Config.ACTION_TIMEOUT:
+        while INTERNAL_STATE.take_action and time.time() < start + config['ACTION_TIMEOUT']:
             pass
 
     def _observe(self):
@@ -161,13 +136,13 @@ class Mupen64PlusEnv(gym.Env):
     def _update_pixels(self):
         #cprint('Update Pixels called!', 'red')
         screen = wx.ScreenDC()
-        bmp = wx.Bitmap(Config.SCR_W, Config.SCR_H)
+        bmp = wx.Bitmap(config['SCR_W'], config['SCR_H'])
         mem = wx.MemoryDC(bmp)
-        mem.Blit(0, 0, Config.SCR_W, Config.SCR_H, screen, Config.OFFSET_X, Config.OFFSET_Y)
+        mem.Blit(0, 0, config['SCR_W'], config['SCR_H'], screen, config['OFFSET_X'], config['OFFSET_Y'])
         bmp.CopyToBuffer(INTERNAL_STATE.pixel_array)
 
         INTERNAL_STATE.numpy_array = np.frombuffer(INTERNAL_STATE.pixel_array, dtype=np.uint8)
-        INTERNAL_STATE.numpy_array = INTERNAL_STATE.numpy_array.reshape(Config.SCR_H, Config.SCR_W, Config.SCR_D)
+        INTERNAL_STATE.numpy_array = INTERNAL_STATE.numpy_array.reshape(config['SCR_H'], config['SCR_W'], config['SCR_D'])
 
     @abc.abstractmethod
     def _evaluate_end_state(self):
@@ -176,10 +151,10 @@ class Mupen64PlusEnv(gym.Env):
 
     def _kill_emulator(self):
         #cprint('Kill Emulator called!', 'red')
-        self._take_action(Config.NOOP)
+        self._take_action(ControllerServer.NOOP)
         if self.emulator_process is not None:
             self.emulator_process.kill()
-        #self._take_action(Config.NOOP)
+        #self._take_action(ControllerServer.NOOP)
 
     def _close(self):
         cprint('Close called!', 'red')
@@ -203,25 +178,25 @@ class Mupen64PlusEnv(gym.Env):
             self.controller_server.shutdown()
 
     def _start_controller_server(self):
-        server = HTTPServer(('', Config.PORT_NUMBER), ControllerServer)
+        server = HTTPServer(('', config['PORT_NUMBER']), ControllerServer)
         self.controller_server_thread = threading.Thread(target=server.serve_forever, args=())
         self.controller_server_thread.daemon = True
         self.controller_server_thread.start()
         self.controller_server = server
-        print('ControllerServer started on port ', Config.PORT_NUMBER)
+        print('ControllerServer started on port ', config['PORT_NUMBER'])
 
     def _configure_environment(self, rom_path):
-        cprint('Configure Env called!', 'red')
+        cprint('configure Env called!', 'red')
         self._start_emulator(rom_path=rom_path)
         self._navigate_menu()
 
     def _start_emulator(self,
                         rom_path,
-                        res_w=Config.SCR_W,
-                        res_h=Config.SCR_H,
-                        input_driver_path=Config.INPUT_DRIVER_PATH):
+                        res_w=config['SCR_W'],
+                        res_h=config['SCR_H'],
+                        input_driver_path=config['INPUT_DRIVER_PATH']):
 
-        cmd = Config.MUPEN_CMD + \
+        cmd = config['MUPEN_CMD'] + \
               " --resolution %ix%i" \
               " --input %s" \
               " %s" \
@@ -254,6 +229,17 @@ class EmulatorMonitor:
 
 ###############################################
 class ControllerServer(BaseHTTPRequestHandler):
+
+    # Buttons
+    NOOP = [0, 0, 0, 0, 0]
+    A_BUTTON = [0, 0, 1, 0, 0]
+    B_BUTTON = [0, 0, 0, 1, 0]
+    RB_BUTTON = [0, 0, 0, 0, 1]
+    JOYSTICK_UP = [0, 80, 0, 0, 0]
+    JOYSTICK_DOWN = [0, -80, 0, 0, 0]
+    JOYSTICK_LEFT = [-80, 0, 0, 0, 0]
+    JOYSTICK_RIGHT = [80, 0, 0, 0, 0]
+
     def log_message(self, format, *args):
         pass
 

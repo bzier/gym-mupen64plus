@@ -1,6 +1,7 @@
 import abc
 from termcolor import cprint
-from gym_mupen64plus.envs.mupen64plus_env import Mupen64PlusEnv, Config, INTERNAL_STATE, IMAGE_HELPER
+from gym_mupen64plus.envs.mupen64plus_env \
+  import Mupen64PlusEnv, ControllerServer, INTERNAL_STATE, IMAGE_HELPER
 
 ###############################################
 class MarioKartEnv(Mupen64PlusEnv):
@@ -57,7 +58,7 @@ class MarioKartEnv(Mupen64PlusEnv):
         cur_col = 0
 
         while frame < 284:
-            action = Config.NOOP
+            action = ControllerServer.NOOP
 
             #  10 - Nintendo screen
             #  80 - Mario Kart splash screen
@@ -73,9 +74,9 @@ class MarioKartEnv(Mupen64PlusEnv):
             # 232 - OK
             # 284 - <Level loaded; turn over control>
             if frame in [10, 80, 120, 130, 132, 134, 160, 162, 202, 230, 232]:
-                action = Config.A_BUTTON
+                action = ControllerServer.A_BUTTON
             elif frame in [125]:
-                action = Config.JOYSTICK_DOWN
+                action = ControllerServer.JOYSTICK_DOWN
 
             # Frame 150 is the 'Player Select' screen
             if frame == 150:
@@ -83,12 +84,12 @@ class MarioKartEnv(Mupen64PlusEnv):
                 print('Player col: ', str(self.PLAYER_COL))
 
                 if cur_row != self.PLAYER_ROW:
-                    action = Config.JOYSTICK_DOWN
+                    action = ControllerServer.JOYSTICK_DOWN
                     cur_row += 1
 
             if frame in range(151, 156) and frame % 2 == 0:
                 if cur_col != self.PLAYER_COL:
-                    action = Config.JOYSTICK_RIGHT
+                    action = ControllerServer.JOYSTICK_RIGHT
                     cur_col += 1
 
             # Frame 195 is the 'Map Select' screen
@@ -100,15 +101,15 @@ class MarioKartEnv(Mupen64PlusEnv):
 
             if frame in range(195, 202) and frame %2 == 0:
                 if cur_col != self.MAP_SERIES:
-                    action = Config.JOYSTICK_RIGHT
+                    action = ControllerServer.JOYSTICK_RIGHT
                     cur_col += 1
 
             if frame in range(223, 230) and frame %2 == 0:
                 if cur_row != self.MAP_CHOICE:
-                    action = Config.JOYSTICK_DOWN
+                    action = ControllerServer.JOYSTICK_DOWN
                     cur_row += 1
 
-            if action != Config.NOOP:
+            if action != ControllerServer.NOOP:
                 print('Frame ', str(frame), ': ', str(action))
 
             self._take_action(action)

@@ -1,0 +1,17 @@
+PORT_NUMBER: 8082
+
+ACTION_TIMEOUT: 5
+
+SCR_W: 640
+SCR_H: 480
+SCR_D: 3
+
+DST_W: 640
+DST_H: 480
+DST_D: 3
+
+OFFSET_X: 400
+OFFSET_Y: 240
+
+MUPEN_CMD: mupen64plus
+INPUT_DRIVER_PATH: /home/brian/Programming/mupen64plus/mupen64plus-input-bot/mupen64plus-input-bot.so
