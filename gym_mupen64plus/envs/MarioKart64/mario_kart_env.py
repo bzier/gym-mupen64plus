@@ -12,8 +12,6 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     END_EPISODE_THRESHOLD = 30
 
-    BLACK_PIXEL = (0, 0, 0)
-
     PLAYER_ROW = 0
     PLAYER_COL = 0
 
@@ -42,7 +40,7 @@ class MarioKartEnv(Mupen64PlusEnv):
         bottom_left = IMAGE_HELPER.GetPixelColor(pix_arr, 19, 460)
         bottom_right = IMAGE_HELPER.GetPixelColor(pix_arr, 620, 460)
 
-        if upper_left == upper_right == bottom_left == bottom_right == self.BLACK_PIXEL:
+        if upper_left == upper_right == bottom_left == bottom_right == IMAGE_HELPER.BLACK_PIXEL:
             INTERNAL_STATE.end_episode_confidence += 1
         else:
             INTERNAL_STATE.end_episode_confidence = 0
