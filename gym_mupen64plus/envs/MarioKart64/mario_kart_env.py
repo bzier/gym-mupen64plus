@@ -1,7 +1,12 @@
 import abc
+import inspect
+import os
+import yaml
 from termcolor import cprint
 from gym_mupen64plus.envs.mupen64plus_env \
   import Mupen64PlusEnv, ControllerServer, INTERNAL_STATE, IMAGE_HELPER
+
+mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "mario_kart_config.yml")))
 
 ###############################################
 class MarioKartEnv(Mupen64PlusEnv):
@@ -24,7 +29,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     MAP_CHOICE = 0
 
     def __init__(self, character='mario'):
-        super(MarioKartEnv, self).__init__('/home/brian/Programming/TensorKart/marioKart.n64')
+        super(MarioKartEnv, self).__init__(mk_config['ROM_PATH'])
         self._set_character(character)
         self.lap = 1
 
