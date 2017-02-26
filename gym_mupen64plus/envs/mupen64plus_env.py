@@ -51,35 +51,8 @@ class ImageHelper:
 
 
 ###############################################
-class XboxController:
-    def __init__(self):
-        try:
-            pygame.init()
-            self.joystick = pygame.joystick.Joystick(0)
-            self.joystick.init()
-        except:
-            print('unable to connect to Xbox Controller')
-
-    def read(self):
-        pygame.event.pump()
-        x_axis = self.joystick.get_axis(0)
-        y_axis = self.joystick.get_axis(1)
-        a_button = self.joystick.get_button(0)
-        b_button = self.joystick.get_button(2) # b=1, x=2
-        rb_button = self.joystick.get_button(5)
-        return [x_axis, y_axis, a_button, b_button, rb_button]
-
-    def manual_override(self):
-        pygame.event.pump()
-        return self.joystick.get_button(4) == 1
-
-
-###############################################
 ### Variables                               ###
 ###############################################
-
-# Init contoller for manual override
-REAL_CONTROLLER = XboxController()
 
 INTERNAL_STATE = InternalState()
 IMAGE_HELPER = ImageHelper()
@@ -267,27 +240,6 @@ class ControllerServer(BaseHTTPRequestHandler):
         if not INTERNAL_STATE.running:
             print('Sending SHUTDOWN response')
             self.write_response(500, "SHUTDOWN")
-
-        #### determine manual override
-        #manual_override = REAL_CONTROLLER.manual_override()
-
-        #if not manual_override:
-        #    output = INTERNAL_STATE.action
-        #    cprint("AI: " + str(output), 'green')
-
-        #else:
-        #    joystick = REAL_CONTROLLER.read()
-        #    joystick[1] *= -1 # flip y (this is in the config when it runs normally)
-
-        #    ### calibration
-        #    output = [
-        #        int(joystick[0] * 80),
-        #        int(joystick[1] * 80),
-        #        int(round(joystick[2])),
-        #        int(round(joystick[3])),
-        #        int(round(joystick[4])),
-        #    ]
-        #    cprint("Manual: " + str(output), 'yellow')
 
         ### respond with controller output
         self.write_response(200, INTERNAL_STATE.action)
