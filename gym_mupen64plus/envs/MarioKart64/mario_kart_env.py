@@ -7,7 +7,12 @@ from gym_mupen64plus.envs.mupen64plus_env \
 class MarioKartEnv(Mupen64PlusEnv):
     __metaclass__ = abc.ABCMeta
 
+    LAP_MAP = {(214, 156, 222): 1,
+               (198, 140, 198): 2,
+               (66, 49, 66): 3}
+
     DEFAULT_STEP_REWARD = -1
+    LAP_REWARD = 10
     END_DETECTION_REWARD_REFUND = 215
 
     END_EPISODE_THRESHOLD = 30
@@ -21,15 +26,37 @@ class MarioKartEnv(Mupen64PlusEnv):
     def __init__(self, character='mario'):
         super(MarioKartEnv, self).__init__('/home/brian/Programming/TensorKart/marioKart.n64')
         self._set_character(character)
+        self.lap = 1
 
-    def _get_reward(self, episode_over):
+    def _reset(self):
+        if self.episode_over:
+            self._navigate_post_race_menu()
+            self.episode_over = False
+
+        return self._observe()
+
+    def _get_reward(self):
+        lap = self._get_lap()
+
         #cprint('Get Reward called!','red')
-        if episode_over:
+        if self.episode_over:
             # Refund the reward lost in the frames between the race finish and end episode detection
             return self.END_DETECTION_REWARD_REFUND
         else:
-            # Currently just -1 per step
-            return self.DEFAULT_STEP_REWARD
+            if lap != self.lap:
+                self.lap = lap
+                return self.LAP_REWARD
+            else:
+                return self.DEFAULT_STEP_REWARD
+
+    def _get_lap(self):
+        pix_arr = INTERNAL_STATE.pixel_array
+        point_a = IMAGE_HELPER.GetPixelColor(pix_arr, 203, 50)
+        if point_a in self.LAP_MAP:
+            return self.LAP_MAP[point_a]
+        else:
+            # TODO: What should this do? The pixel is not known, so assume same lap?
+            return self.lap
 
     def _evaluate_end_state(self):
         #cprint('Evaluate End State called!','red')
@@ -113,14 +140,39 @@ class MarioKartEnv(Mupen64PlusEnv):
             self._take_action(action)
             frame += 1
 
+    def _navigate_post_race_menu(self):
+        frame = 0
+        while frame < 138:
+            action = ControllerServer.NOOP
+
+            # Post race menu (previous choice selected by default)
+            # - Retry
+            # - Course Change
+            # - Driver Change
+            # - Quit
+            # - Replay
+            # - Save Ghost
+
+            #  60 - Times screen
+            #  75 - Post race menu
+            # 138 - <Level loaded; turn over control>
+            if frame in [60, 75]:
+                action = ControllerServer.A_BUTTON
+
+            if action != ControllerServer.NOOP:
+                print('Frame ', str(frame), ': ', str(action))
+
+            self._take_action(action)
+            frame += 1
+
     def _set_character(self, character):
-        characters = {'mario'  : (0,0),
-                      'luigi'  : (0,1),
-                      'peach'  : (0,2),
-                      'toad'   : (0,3),
-                      'yoshi'  : (1,0),
-                      'd.k.'   : (1,1),
-                      'wario'  : (1,2),
-                      'bowser' : (1,3)}
+        characters = {'mario'  : (0, 0),
+                      'luigi'  : (0, 1),
+                      'peach'  : (0, 2),
+                      'toad'   : (0, 3),
+                      'yoshi'  : (1, 0),
+                      'd.k.'   : (1, 1),
+                      'wario'  : (1, 2),
+                      'bowser' : (1, 3)}
 
         self.PLAYER_ROW, self.PLAYER_COLUMN = characters[character]

@@ -41,7 +41,7 @@ class InternalState:
 class ImageHelper:
 
     BLACK_PIXEL = (0, 0, 0)
-    
+
     def GetPixelColor(self, image_array, x, y):
         base_pixel = (x + (y * config['SCR_W'])) * 3
         red = image_array[base_pixel + 0]
@@ -91,29 +91,33 @@ class Mupen64PlusEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self, rom_path):
+        self.step_count = 0
+        self.episode_over = False
         INTERNAL_STATE.running = True
         self.controller_server = None
         self.controller_server_thread = None
         self._start_controller_server()
         self.emulator_process = None
         self._configure_environment(rom_path)
-        self.observation_space = spaces.Box(low=0, high=255,
-                                            shape=(config['SCR_H'], config['SCR_W'], config['SCR_D']))
 
-        self.action_space = spaces.Tuple((spaces.Box(low=-80, high=80, shape=1), # Joystick X-axis
-                                          spaces.Box(low=-80, high=80, shape=1), # Joystick Y-axis
-                                          spaces.Discrete(2), # A Button
-                                          spaces.Discrete(2), # B Button
-                                          spaces.Discrete(2))) # RB Button
+        self.observation_space = \
+            spaces.Box(low=0, high=255, shape=(config['SCR_H'], config['SCR_W'], config['SCR_D']))
+
+        self.action_space = spaces.MultiDiscrete([[-80, 80], # Joystick X-axis
+                                                  [-80, 80], # Joystick Y-axis
+                                                  [0, 1], # A Button
+                                                  [0, 1], # B Button
+                                                  [0, 1]]) # RB Button
 
     def _step(self, action):
-        #cprint('Step called!', 'red')
+        cprint('Step %i: %s' % (self.step_count, action), 'green')
         self._take_action(action)
         obs = self._observe()
-        episode_over = self._evaluate_end_state()
-        reward = self._get_reward(episode_over)
+        self.episode_over = self._evaluate_end_state()
+        reward = self._get_reward()
 
-        return obs, reward, episode_over, {}
+        self.step_count += 1
+        return obs, reward, self.episode_over, {}
 
     def _take_action(self, action):
         #cprint('Take Action called!', 'red')
@@ -132,20 +136,22 @@ class Mupen64PlusEnv(gym.Env):
         return INTERNAL_STATE.numpy_array
 
     @abc.abstractmethod
-    def _get_reward(self, episode_over):
+    def _get_reward(self):
         #cprint('Get Reward called!', 'red')
         return 0
 
     def _update_pixels(self):
         #cprint('Update Pixels called!', 'red')
-        screen = wx.ScreenDC()
         bmp = wx.Bitmap(config['SCR_W'], config['SCR_H'])
-        mem = wx.MemoryDC(bmp)
-        mem.Blit(0, 0, config['SCR_W'], config['SCR_H'], screen, config['OFFSET_X'], config['OFFSET_Y'])
+        wx.MemoryDC(bmp).Blit(0, 0,
+                              config['SCR_W'], config['SCR_H'],
+                              wx.ScreenDC(),
+                              config['OFFSET_X'], config['OFFSET_Y'])
         bmp.CopyToBuffer(INTERNAL_STATE.pixel_array)
 
         INTERNAL_STATE.numpy_array = np.frombuffer(INTERNAL_STATE.pixel_array, dtype=np.uint8)
-        INTERNAL_STATE.numpy_array = INTERNAL_STATE.numpy_array.reshape(config['SCR_H'], config['SCR_W'], config['SCR_D'])
+        INTERNAL_STATE.numpy_array = \
+            INTERNAL_STATE.numpy_array.reshape(config['SCR_H'], config['SCR_W'], config['SCR_D'])
 
     @abc.abstractmethod
     def _evaluate_end_state(self):
@@ -165,6 +171,7 @@ class Mupen64PlusEnv(gym.Env):
         self._kill_emulator()
         self._stop_controller_server()
 
+    @abc.abstractmethod
     def _reset(self):
         cprint('Reset called!', 'red')
         #self._kill_emulator()
