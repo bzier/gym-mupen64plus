@@ -21,10 +21,6 @@ import numpy as np
 import wx
 wx.App()
 
-config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "config.yml")))
-
-MILLIS_50 = 50.0 / 1000.0
-
 
 ###############################################
 class ImageHelper:
@@ -40,8 +36,12 @@ class ImageHelper:
 
 
 ###############################################
-### Variables                               ###
+### Variables & Constants                   ###
 ###############################################
+
+config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "config.yml")))
+
+MILLIS_50 = 50.0 / 1000.0
 
 IMAGE_HELPER = ImageHelper()
 
