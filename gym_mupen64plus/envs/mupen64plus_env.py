@@ -4,11 +4,9 @@ import abc
 import array
 import inspect
 import os
-import signal
 import subprocess
 import threading
 import time
-import pygame
 from termcolor import cprint
 import yaml
 
