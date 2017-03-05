@@ -56,12 +56,12 @@ class Mupen64PlusEnv(gym.Env):
         self.running = True
         self.episode_over = False
         self.numpy_array = None
-        self.pixel_array = array.array('B', [0] * (config['SCR_W'] * config['SCR_H'] * config['SCR_D']))
-        self.controller_server = None
-        self.controller_server_thread = None
-        self._start_controller_server()
-        self.emulator_process = None
-        self._configure_environment(rom_path)
+        self.pixel_array = array.array('B', [0] * (config['SCR_W'] *
+                                                   config['SCR_H'] *
+                                                   config['SCR_D']))
+        self.controller_server, self.controller_server_thread = self._start_controller_server()
+        self.emulator_process = self._start_emulator(rom_path=rom_path)
+        self._navigate_menu()
 
         self.observation_space = \
             spaces.Box(low=0, high=255, shape=(config['SCR_H'], config['SCR_W'], config['SCR_D']))
@@ -74,31 +74,16 @@ class Mupen64PlusEnv(gym.Env):
 
     def _step(self, action):
         #cprint('Step %i: %s' % (self.step_count, action), 'green')
-        self._take_action(action)
+        self.controller_server.send_controls(action)
         obs = self._observe()
-        self._evaluate_end_state()
+        self.episode_over = self._evaluate_end_state()
         reward = self._get_reward()
 
         self.step_count += 1
         return obs, reward, self.episode_over, {}
 
-    def _take_action(self, action):
-        #cprint('Take Action called!', 'red')
-        self.controller_server.send_controls(action)
-
     def _observe(self):
         #cprint('Observe called!', 'red')
-        self._update_pixels()
-
-        return self.numpy_array
-
-    @abc.abstractmethod
-    def _get_reward(self):
-        #cprint('Get Reward called!', 'red')
-        return 0
-
-    def _update_pixels(self):
-        #cprint('Update Pixels called!', 'red')
         bmp = wx.Bitmap(config['SCR_W'], config['SCR_H'])
         wx.MemoryDC(bmp).Blit(0, 0,
                               config['SCR_W'], config['SCR_H'],
@@ -110,23 +95,21 @@ class Mupen64PlusEnv(gym.Env):
         self.numpy_array = \
             self.numpy_array.reshape(config['SCR_H'], config['SCR_W'], config['SCR_D'])
 
+        return self.numpy_array
+
+    @abc.abstractmethod
+    def _navigate_menu(self):
+        return
+
+    @abc.abstractmethod
+    def _get_reward(self):
+        #cprint('Get Reward called!', 'red')
+        return 0
+
     @abc.abstractmethod
     def _evaluate_end_state(self):
         #cprint('Evaluate End State called!', 'red')
         return False
-
-    def _kill_emulator(self):
-        #cprint('Kill Emulator called!', 'red')
-        self._take_action(ControllerHTTPServer.NOOP)
-        if self.emulator_process is not None:
-            self.emulator_process.kill()
-        #self._take_action(ControllerHTTPServer.NOOP)
-
-    def _close(self):
-        cprint('Close called!', 'red')
-        self.running = False
-        self._kill_emulator()
-        self._stop_controller_server()
 
     @abc.abstractmethod
     def _reset(self):
@@ -135,26 +118,29 @@ class Mupen64PlusEnv(gym.Env):
         return self._observe()
 
     def _render(self, mode='human', close=False):
+        # TODO: Implement xvfb support for background execution,
+        # and implement this render method to display the window
         pass
+
+    def _close(self):
+        cprint('Close called!', 'red')
+        self.running = False
+        self._kill_emulator()
+        self._stop_controller_server()
+
+    def _start_controller_server(self):
+        server = ControllerHTTPServer(('', config['PORT_NUMBER']),
+                                      config['ACTION_TIMEOUT'])
+        server_thread = threading.Thread(target=server.serve_forever, args=())
+        server_thread.daemon = True
+        server_thread.start()
+        print('ControllerHTTPServer started on port ', config['PORT_NUMBER'])
+        return server, server_thread
 
     def _stop_controller_server(self):
         #cprint('Stop Controller Server called!', 'red')
         if self.controller_server is not None:
             self.controller_server.shutdown()
-
-    def _start_controller_server(self):
-        print('_start_controller_server')
-        server = ControllerHTTPServer(('', config['PORT_NUMBER']), ControllerRequestHandler, config['ACTION_TIMEOUT'])
-        self.controller_server_thread = threading.Thread(target=server.serve_forever, args=())
-        self.controller_server_thread.daemon = True
-        self.controller_server_thread.start()
-        self.controller_server = server
-        print('ControllerHTTPServer started on port ', config['PORT_NUMBER'])
-
-    def _configure_environment(self, rom_path):
-        cprint('configure Env called!', 'red')
-        self._start_emulator(rom_path=rom_path)
-        self._navigate_menu()
 
     def _start_emulator(self,
                         rom_path,
@@ -172,15 +158,22 @@ class Mupen64PlusEnv(gym.Env):
 
         print('Starting emulator with comand: %s' % cmd)
 
-        self.emulator_process = subprocess.Popen(cmd.split(' '), shell=False, stderr=subprocess.STDOUT)
+        emulator_process = subprocess.Popen(cmd.split(' '),
+                                            shell=False,
+                                            stderr=subprocess.STDOUT)
         emu_mon = EmulatorMonitor()
-        monitor_thread = threading.Thread(target=emu_mon.monitor_emulator, args=[self.emulator_process])
+        monitor_thread = threading.Thread(target=emu_mon.monitor_emulator,
+                                          args=[emulator_process])
         monitor_thread.daemon = True
         monitor_thread.start()
 
-    @abc.abstractmethod
-    def _navigate_menu(self):
-        return
+        return emulator_process
+
+    def _kill_emulator(self):
+        #cprint('Kill Emulator called!', 'red')
+        self.controller_server.send_controls(ControllerHTTPServer.NOOP)
+        if self.emulator_process is not None:
+            self.emulator_process.kill()
 
 
 ###############################################
@@ -191,6 +184,7 @@ class EmulatorMonitor:
             time.sleep(2)
             emu_return = emulator.poll()
 
+        # TODO: this means our environment died... need to die too
         print('Emulator closed with code: ' + str(emu_return))
 
 
@@ -207,12 +201,12 @@ class ControllerHTTPServer(HTTPServer, object):
     JOYSTICK_LEFT = [-80, 0, 0, 0, 0]
     JOYSTICK_RIGHT = [80, 0, 0, 0, 0]
 
-    def __init__(self, server_address, RequestHandlerClass, control_timeout, bind_and_activate=True):
+    def __init__(self, server_address, control_timeout):
         self.control_timeout = control_timeout
         self.controls = ControllerHTTPServer.NOOP
         self.hold_response = True
         self.running = True
-        super(ControllerHTTPServer, self).__init__(server_address, RequestHandlerClass, bind_and_activate)
+        super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
     def send_controls(self, controls):
         #print('Send controls called')
@@ -229,30 +223,30 @@ class ControllerHTTPServer(HTTPServer, object):
         super(ControllerHTTPServer, self).shutdown()
 
 
-class ControllerRequestHandler(BaseHTTPRequestHandler, object):
+    class ControllerRequestHandler(BaseHTTPRequestHandler, object):
 
-    def log_message(self, format, *args):
-        pass
+        def log_message(self, format, *args):
+            pass
 
-    def write_response(self, resp_code, resp_data):
-        self.send_response(resp_code)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-        self.wfile.write(resp_data)
+        def write_response(self, resp_code, resp_data):
+            self.send_response(resp_code)
+            self.send_header("Content-type", "text/plain")
+            self.end_headers()
+            self.wfile.write(resp_data)
 
-    def do_GET(self):
+        def do_GET(self):
 
-        while self.server.running and self.server.hold_response:
-            time.sleep(MILLIS_50)
+            while self.server.running and self.server.hold_response:
+                time.sleep(MILLIS_50)
 
-        if not self.server.running:
-            print('Sending SHUTDOWN response')
-            self.write_response(500, "SHUTDOWN")
+            if not self.server.running:
+                print('Sending SHUTDOWN response')
+                self.write_response(500, "SHUTDOWN")
 
-        ### respond with controller output
-        self.write_response(200, self.server.controls)
+            ### respond with controller output
+            self.write_response(200, self.server.controls)
 
-        self.server.hold_response = True
-        return
+            self.server.hold_response = True
+            return
 
 ###############################################

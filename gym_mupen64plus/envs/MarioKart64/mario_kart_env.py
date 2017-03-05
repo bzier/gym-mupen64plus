@@ -92,7 +92,9 @@ class MarioKartEnv(Mupen64PlusEnv):
             self.end_episode_confidence = 0
 
         if self.end_episode_confidence > self.END_EPISODE_THRESHOLD:
-            self.episode_over = True
+            return True
+        else:
+            return False
 
     def _navigate_menu(self):
         frame = 0
@@ -154,7 +156,7 @@ class MarioKartEnv(Mupen64PlusEnv):
             if action != ControllerHTTPServer.NOOP:
                 print('Frame ', str(frame), ': ', str(action))
 
-            self._take_action(action)
+            self.controller_server.send_controls(action)
             frame += 1
 
     def _navigate_post_race_menu(self):
@@ -179,7 +181,7 @@ class MarioKartEnv(Mupen64PlusEnv):
             if action != ControllerHTTPServer.NOOP:
                 print('Frame ', str(frame), ': ', str(action))
 
-            self._take_action(action)
+            self.controller_server.send_controls(action)
             frame += 1
 
     def _set_character(self, character):

@@ -1,17 +1,20 @@
+# The port number to use for the controller server:
 PORT_NUMBER: 8082
 
+# How long to block waiting for the controller server to send controls (the action) before returning:
 ACTION_TIMEOUT: 5
 
+# The width, height, and depth of the emulator window:
 SCR_W: 640
 SCR_H: 480
 SCR_D: 3
 
-DST_W: 640
-DST_H: 480
-DST_D: 3
-
+# The offset location of where the emulator window appears on screen:
 OFFSET_X: 400
 OFFSET_Y: 240
 
+# The command to invoke the mupen64plus emulator process:
 MUPEN_CMD: mupen64plus
+
+# The path to the mupen64plus input driver:
 INPUT_DRIVER_PATH: /home/brian/Programming/mupen64plus/mupen64plus-input-bot/mupen64plus-input-bot.so
