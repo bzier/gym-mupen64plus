@@ -10,26 +10,51 @@ Many of the core concepts for this wrapper were borrowed/adapted directly from [
 
 ## Setup
 
-In order to set up the dependencies, it is recommended that you use a [conda environment](http://conda.pydata.org/docs/using/envs.html) to minimize disruption to your system and to prevent version conflicts with libraries you may already have installed.
-
 ### Python Dependencies
-* python 2.7
+*If you follow the installation steps below, these dependencies will be resolved automatically.*
+* Python 2.7
 * gym
 * numpy
 * pygame
-* wx
+* PyYAML
 * termcolor
-* scikit-image ???
+* wx
 
 ### Additional Dependencies
 * Mupen64Plus
+    ```bash
+    #!/bin/bash
+    sudo apt-get install mupen64plus
+    ```
+
 * mupen64plus-input-bot
+    ```bash
+    #!/bin/bash
+    mkdir mupen64plus-src && cd "$_"
+    git clone https://github.com/mupen64plus/mupen64plus-core
+    git clone https://github.com/kevinhughes27/mupen64plus-input-bot
+    cd mupen64plus-input-bot
+    make all
+    ```
+    *Note the path of the resulting .so file*
+
 * One or more N64 ROMs (see the [Games](#games) section below)
 
-### Conda
+### Installation
+
+In order to set up the dependencies, it is recommended that you use a [conda environment](http://conda.pydata.org/docs/using/envs.html) to minimize disruption to your system and to prevent version conflicts with libraries you may already have installed. (*Alternatively, you can just execute the first and last statements to install directly if you prefer*).
 
 ```bash
+#!/bin/bash
 cd gym-mupen64plus
+
+# Create the conda environment with all the necessary requirements
+conda env create -f environment.yml
+
+# Activate the new environment
+source activate gym-mupen64plus
+
+# Install the gym-mupen64plus package in the new environment
 pip install -e .
 ```
 
@@ -37,7 +62,7 @@ pip install -e .
 
 A configuration file ([`config.yml`](gym_mupen64plus/envs/config.yml)) has been provided for the core wrapper where the primary settings are stored. This configuration will likely vary on your system, so please take a look at the available settings and adjust as necessary.
 
-Additionally, each game environment may specify configuration values which will be stored in a separate config file in the game's specific subdirectory (see each game's README).
+Additionally, each game environment may specify configuration values which will be stored in a separate config file in the game's specific subdirectory (see each game's README for those details).
 
 
 ## Architecture
@@ -47,9 +72,10 @@ Additionally, each game environment may specify configuration values which will 
 The core `Mupen64PlusEnv` class has been built to handle many of the details of the wrapping and execution of the Mupen64Plus emulator, as well as the implementation of the gym environment. In fact, it inherits from `gym.Env`. The class is abstract and each game environment inherits from it. The game environment subclass provides the ROM path to the base.
 
 #### Initialization:
-* starts the controller server
-* starts the emulator process with the provided ROM path
+* starts the controller server using the port specified in the configuration
+* starts the emulator process with the provided ROM path (this also uses values from the config file)
 * sets up the observation and action spaces (see the [gym documentation](https://gym.openai.com/docs))
+    * the observation space is 
 
 #### Methods:
 * `_step(action)` handles taking the supplied action, passing it to the controller server, and reading the new `observation`, `reward`, and `end_episode` values.
@@ -78,9 +104,29 @@ When initialized, will start an HTTP Server listening on the specified port. The
 This class simply polls the emulator process to ensure it is still up and running. If not, it prints the emulator process's exit code. Eventually this will also cause the environment to shutdown since the heart of it just died.
 
 
-## Example Agent
+## Example Agents
 
-An example AI agent can be found [here](http://www.example.com/).
+### Simple Test:
+The simplest example to test if the environment is up-and-running:
+```python
+#!/bin/python
+import gym, gym_mupen64plus
+
+env = gym.make('Mario-Kart-Luigi-Raceway-v0')
+
+for i in range(88):
+    (obs, rew, end, info) = env.step([0, 0, 0, 0, 0]) # NOOP until green light
+
+for i in range(100):
+    (obs, rew, end, info) = env.step([0, 0, 1, 0, 0]) # Drive straight
+
+raw_input("Press <enter> to exit... ")
+
+env.close()
+```
+
+### AI Agent:
+A more complete example AI agent will be linked later.
 
 
 ## Games

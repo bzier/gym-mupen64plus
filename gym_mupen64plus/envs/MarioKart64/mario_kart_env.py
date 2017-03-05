@@ -8,16 +8,6 @@ from gym_mupen64plus.envs.mupen64plus_env \
 
 mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "mario_kart_config.yml")))
 
-
-#### EXAMPLE USAGE ####
-#
-# import gym, gym_mario_kart; env = gym.make('Mario-Kart-v0');
-#
-# (obs,rew,end,info) = env.step([0,0,0,0,0])
-#
-#######################
-
-
 ###############################################
 class MarioKartEnv(Mupen64PlusEnv):
     __metaclass__ = abc.ABCMeta

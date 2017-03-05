@@ -241,6 +241,8 @@ class ControllerHTTPServer(HTTPServer, object):
 
             if not self.server.running:
                 print('Sending SHUTDOWN response')
+                # TODO: This sometimes fails with a broken pipe because
+                # the emulator has already stopped. Should handle gracefully
                 self.write_response(500, "SHUTDOWN")
 
             ### respond with controller output
