@@ -4,9 +4,19 @@ import os
 import yaml
 from termcolor import cprint
 from gym_mupen64plus.envs.mupen64plus_env \
-  import Mupen64PlusEnv, ControllerServer, INTERNAL_STATE, IMAGE_HELPER
+  import Mupen64PlusEnv, ControllerHTTPServer, IMAGE_HELPER
 
 mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "mario_kart_config.yml")))
+
+
+#### EXAMPLE USAGE ####
+#
+# import gym, gym_mario_kart; env = gym.make('Mario-Kart-v0');
+#
+# (obs,rew,end,info) = env.step([0,0,0,0,0])
+#
+#######################
+
 
 ###############################################
 class MarioKartEnv(Mupen64PlusEnv):
@@ -30,6 +40,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     def __init__(self, character='mario'):
         super(MarioKartEnv, self).__init__(mk_config['ROM_PATH'])
+        self.end_episode_confidence = 0
         self._set_character(character)
         self.lap = 1
 
@@ -37,6 +48,9 @@ class MarioKartEnv(Mupen64PlusEnv):
         if self.episode_over:
             self._navigate_post_race_menu()
             self.episode_over = False
+        else:
+            # TODO: Implement pause and reset
+            pass
 
         return self._observe()
 
@@ -55,7 +69,7 @@ class MarioKartEnv(Mupen64PlusEnv):
                 return self.DEFAULT_STEP_REWARD
 
     def _get_lap(self):
-        pix_arr = INTERNAL_STATE.pixel_array
+        pix_arr = self.pixel_array
         point_a = IMAGE_HELPER.GetPixelColor(pix_arr, 203, 50)
         if point_a in self.LAP_MAP:
             return self.LAP_MAP[point_a]
@@ -65,7 +79,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     def _evaluate_end_state(self):
         #cprint('Evaluate End State called!','red')
-        pix_arr = INTERNAL_STATE.pixel_array
+        pix_arr = self.pixel_array
 
         upper_left = IMAGE_HELPER.GetPixelColor(pix_arr, 19, 19)
         upper_right = IMAGE_HELPER.GetPixelColor(pix_arr, 620, 19)
@@ -73,14 +87,12 @@ class MarioKartEnv(Mupen64PlusEnv):
         bottom_right = IMAGE_HELPER.GetPixelColor(pix_arr, 620, 460)
 
         if upper_left == upper_right == bottom_left == bottom_right == IMAGE_HELPER.BLACK_PIXEL:
-            INTERNAL_STATE.end_episode_confidence += 1
+            self.end_episode_confidence += 1
         else:
-            INTERNAL_STATE.end_episode_confidence = 0
+            self.end_episode_confidence = 0
 
-        if INTERNAL_STATE.end_episode_confidence > self.END_EPISODE_THRESHOLD:
-            INTERNAL_STATE.is_end_episode = True
-
-        return INTERNAL_STATE.is_end_episode
+        if self.end_episode_confidence > self.END_EPISODE_THRESHOLD:
+            self.episode_over = True
 
     def _navigate_menu(self):
         frame = 0
@@ -88,7 +100,7 @@ class MarioKartEnv(Mupen64PlusEnv):
         cur_col = 0
 
         while frame < 284:
-            action = ControllerServer.NOOP
+            action = ControllerHTTPServer.NOOP
 
             #  10 - Nintendo screen
             #  80 - Mario Kart splash screen
@@ -104,9 +116,9 @@ class MarioKartEnv(Mupen64PlusEnv):
             # 232 - OK
             # 284 - <Level loaded; turn over control>
             if frame in [10, 80, 120, 130, 132, 134, 160, 162, 202, 230, 232]:
-                action = ControllerServer.A_BUTTON
+                action = ControllerHTTPServer.A_BUTTON
             elif frame in [125]:
-                action = ControllerServer.JOYSTICK_DOWN
+                action = ControllerHTTPServer.JOYSTICK_DOWN
 
             # Frame 150 is the 'Player Select' screen
             if frame == 150:
@@ -114,12 +126,12 @@ class MarioKartEnv(Mupen64PlusEnv):
                 print('Player col: ', str(self.PLAYER_COL))
 
                 if cur_row != self.PLAYER_ROW:
-                    action = ControllerServer.JOYSTICK_DOWN
+                    action = ControllerHTTPServer.JOYSTICK_DOWN
                     cur_row += 1
 
             if frame in range(151, 156) and frame % 2 == 0:
                 if cur_col != self.PLAYER_COL:
-                    action = ControllerServer.JOYSTICK_RIGHT
+                    action = ControllerHTTPServer.JOYSTICK_RIGHT
                     cur_col += 1
 
             # Frame 195 is the 'Map Select' screen
@@ -131,15 +143,15 @@ class MarioKartEnv(Mupen64PlusEnv):
 
             if frame in range(195, 202) and frame %2 == 0:
                 if cur_col != self.MAP_SERIES:
-                    action = ControllerServer.JOYSTICK_RIGHT
+                    action = ControllerHTTPServer.JOYSTICK_RIGHT
                     cur_col += 1
 
             if frame in range(223, 230) and frame %2 == 0:
                 if cur_row != self.MAP_CHOICE:
-                    action = ControllerServer.JOYSTICK_DOWN
+                    action = ControllerHTTPServer.JOYSTICK_DOWN
                     cur_row += 1
 
-            if action != ControllerServer.NOOP:
+            if action != ControllerHTTPServer.NOOP:
                 print('Frame ', str(frame), ': ', str(action))
 
             self._take_action(action)
@@ -148,7 +160,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     def _navigate_post_race_menu(self):
         frame = 0
         while frame < 138:
-            action = ControllerServer.NOOP
+            action = ControllerHTTPServer.NOOP
 
             # Post race menu (previous choice selected by default)
             # - Retry
@@ -162,9 +174,9 @@ class MarioKartEnv(Mupen64PlusEnv):
             #  75 - Post race menu
             # 138 - <Level loaded; turn over control>
             if frame in [60, 75]:
-                action = ControllerServer.A_BUTTON
+                action = ControllerHTTPServer.A_BUTTON
 
-            if action != ControllerServer.NOOP:
+            if action != ControllerHTTPServer.NOOP:
                 print('Frame ', str(frame), ': ', str(action))
 
             self._take_action(action)
