@@ -113,6 +113,7 @@ The simplest example to test if the environment is up-and-running:
 import gym, gym_mupen64plus
 
 env = gym.make('Mario-Kart-Luigi-Raceway-v0')
+env.reset()
 
 for i in range(88):
     (obs, rew, end, info) = env.step([0, 0, 0, 0, 0]) # NOOP until green light
