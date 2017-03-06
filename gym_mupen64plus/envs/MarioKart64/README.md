@@ -45,6 +45,9 @@ A configuration file ([`mario_kart_config.yml`](mario_kart_config.yml)) has been
     
         At the end of each race, the game shrinks the view to   multiple smaller frames in order to show lap/race times.  We sample the corners of the screen, and if all four corners are pure black pixels for 30 frames in a row, we consider it the end of the race (episode).
 
+        [![EndEpisodeScreenshot1](screenshots/end_episode_1_t.png)](screenshots/end_episode_1.png)
+        [![EndEpisodeScreenshot2](screenshots/end_episode_2_t.png)](screenshots/end_episode_2.png)
+
     * `_reset()` resets the environment to begin a new episode.
 
         If the environment is at the end of an episode, `reset()` will navigate the post-race menu to retry the course (see `_navigate_post_race_menu()` below). Other scenarios still need to be implemented (e.g. mid-race should pause and then retry).
