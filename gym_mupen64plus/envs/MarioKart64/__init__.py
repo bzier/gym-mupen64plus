@@ -1,17 +1,199 @@
+from gym.envs.registration import register
 
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartLuigiRacewayEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartMooMooFarmEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartKoopaTroopaBeachEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartKalimariDesertEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartToadsTurnpikeEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartFrappeSnowlandEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartChocoMountainEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartMarioRacewayEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartWarioStadiumEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartSherbetLandEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartRoyalRacewayEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartBowsersCastleEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartDKsJungleParkwayEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartYoshiValleyEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartBansheeBoardwalkEnv
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartRainbowRoadEnv
+from gym_mupen64plus.envs.MarioKart64.track_envs \
+import MarioKartLuigiRacewayEnv, \
+       MarioKartMooMooFarmEnv, \
+       MarioKartKoopaTroopaBeachEnv, \
+       MarioKartKalimariDesertEnv, \
+       MarioKartToadsTurnpikeEnv, \
+       MarioKartFrappeSnowlandEnv, \
+       MarioKartChocoMountainEnv, \
+       MarioKartMarioRacewayEnv, \
+       MarioKartWarioStadiumEnv, \
+       MarioKartSherbetLandEnv, \
+       MarioKartRoyalRacewayEnv, \
+       MarioKartBowsersCastleEnv, \
+       MarioKartDKsJungleParkwayEnv, \
+       MarioKartYoshiValleyEnv, \
+       MarioKartBansheeBoardwalkEnv, \
+       MarioKartRainbowRoadEnv
+
+##### MUSHROOM CUP ####
+register(
+    id='Mario-Kart-Luigi-Raceway-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartLuigiRacewayEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Mushroom',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Moo-Moo-Farm-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartMooMooFarmEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Mushroom',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Koopa-Troopa-Beach-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartKoopaTroopaBeachEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Mushroom',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Kalimari-Desert-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartKalimariDesertEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Mushroom',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+##### FLOWER CUP ####
+register(
+    id='Mario-Kart-Toads-Turnpike-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartToadsTurnpikeEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Flower',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Frappe-Snowland-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartFrappeSnowlandEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Flower',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Choco-Mountain-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartChocoMountainEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Flower',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Mario-Raceway-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartMarioRacewayEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Flower',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+##### STAR CUP ####
+register(
+    id='Mario-Kart-Wario-Stadium-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartWarioStadiumEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Star',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Sherbet-Land-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartSherbetLandEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Star',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Royal-Raceway-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartRoyalRacewayEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Star',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Bowsers-Castle-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartBowsersCastleEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Star',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+##### SPECIAL CUP ####
+register(
+    id='Mario-Kart-DKs-Jungle-Parkway-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartDKsJungleParkwayEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Special',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Yoshi-Valley-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartYoshiValleyEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Special',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-BansheeBoardwalk-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartBansheeBoardwalkEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Special',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+register(
+    id='Mario-Kart-Rainbow-Road-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartRainbowRoadEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Special',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
