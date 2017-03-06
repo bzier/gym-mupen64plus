@@ -12,9 +12,9 @@ mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][
 class MarioKartEnv(Mupen64PlusEnv):
     __metaclass__ = abc.ABCMeta
 
-    LAP_MAP = {(214, 156, 222): 1,
-               (198, 140, 198): 2,
-               (66, 49, 66): 3}
+    LAP_COLOR_MAP = {(214, 156, 222): 1,
+                     (198, 140, 198): 2,
+                     (66, 49, 66): 3}
 
     DEFAULT_STEP_REWARD = -1
     LAP_REWARD = 10
@@ -61,8 +61,8 @@ class MarioKartEnv(Mupen64PlusEnv):
     def _get_lap(self):
         pix_arr = self.pixel_array
         point_a = IMAGE_HELPER.GetPixelColor(pix_arr, 203, 50)
-        if point_a in self.LAP_MAP:
-            return self.LAP_MAP[point_a]
+        if point_a in self.LAP_COLOR_MAP:
+            return self.LAP_COLOR_MAP[point_a]
         else:
             # TODO: What should this do? The pixel is not known, so assume same lap?
             return self.lap
@@ -103,7 +103,7 @@ class MarioKartEnv(Mupen64PlusEnv):
             # 134 - OK
             # 160 - Select player
             # 162 - OK
-            # 201 - Select map series
+            # 202 - Select map series
             # 230 - Select map choice
             # 232 - OK
             # 284 - <Level loaded; turn over control>
