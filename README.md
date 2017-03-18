@@ -46,7 +46,23 @@ Please create issues as you encounter them. Future work and ideas will be captur
 
 ### Installation
 
-In order to set up the dependencies, it is recommended that you use a [conda environment](http://conda.pydata.org/docs/using/envs.html) to minimize disruption to your system and to prevent version conflicts with libraries you may already have installed. (*Alternatively, you can just execute the first and last statements to install directly if you prefer*).
+Setting up the dependencies can be accomplished in many different ways. Two methods are provided here:
+
+#### Method #1: Directly installing via `pip`:
+To simply install the necessary dependencies into your system, use the following commands.
+
+*Note that this may upgrade/replace existing packages you may already have installed.*
+
+```bash
+#!/bin/bash
+cd gym-mupen64plus
+
+# Install the gym-mupen64plus package in the new environment
+pip install -e .
+```
+
+#### Method #2: Installing in a [conda environment](http://conda.pydata.org/docs/using/envs.html):
+To minimize disruption to your system and to prevent version conflicts with libraries you may already have installed, you can set up a conda environment with the following commands.
 
 ```bash
 #!/bin/bash
