@@ -57,7 +57,7 @@ To simply install the necessary dependencies into your system, use the following
 #!/bin/bash
 cd gym-mupen64plus
 
-# Install the gym-mupen64plus package in the new environment
+# Install the gym-mupen64plus package (and dependencies)
 pip install -e .
 ```
 
