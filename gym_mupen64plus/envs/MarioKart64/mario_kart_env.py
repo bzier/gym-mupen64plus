@@ -47,7 +47,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     def _get_reward(self):
         lap = self._get_lap()
 
-        #cprint('Get Reward called!','red')
+        #cprint('Get Reward called!','yellow')
         if self.episode_over:
             # Refund the reward lost in the frames between the race finish and end episode detection
             return self.END_DETECTION_REWARD_REFUND
@@ -68,7 +68,7 @@ class MarioKartEnv(Mupen64PlusEnv):
             return self.lap
 
     def _evaluate_end_state(self):
-        #cprint('Evaluate End State called!','red')
+        #cprint('Evaluate End State called!','yellow')
         pix_arr = self.pixel_array
 
         upper_left = IMAGE_HELPER.GetPixelColor(pix_arr, 19, 19)

@@ -81,7 +81,7 @@ class Mupen64PlusEnv(gym.Env):
         return obs, reward, self.episode_over, {}
 
     def _observe(self):
-        #cprint('Observe called!', 'red')
+        #cprint('Observe called!', 'yellow')
         bmp = wx.Bitmap(config['SCR_W'], config['SCR_H'])
         wx.MemoryDC(bmp).Blit(0, 0,
                               config['SCR_W'], config['SCR_H'],
@@ -101,17 +101,17 @@ class Mupen64PlusEnv(gym.Env):
 
     @abc.abstractmethod
     def _get_reward(self):
-        #cprint('Get Reward called!', 'red')
+        #cprint('Get Reward called!', 'yellow')
         return 0
 
     @abc.abstractmethod
     def _evaluate_end_state(self):
-        #cprint('Evaluate End State called!', 'red')
+        #cprint('Evaluate End State called!', 'yellow')
         return False
 
     @abc.abstractmethod
     def _reset(self):
-        cprint('Reset called!', 'red')
+        cprint('Reset called!', 'yellow')
 
         return self._observe()
 
@@ -121,7 +121,7 @@ class Mupen64PlusEnv(gym.Env):
         pass
 
     def _close(self):
-        cprint('Close called!', 'red')
+        cprint('Close called!', 'yellow')
         self.running = False
         self._kill_emulator()
         self._stop_controller_server()
@@ -136,7 +136,7 @@ class Mupen64PlusEnv(gym.Env):
         return server, server_thread
 
     def _stop_controller_server(self):
-        #cprint('Stop Controller Server called!', 'red')
+        #cprint('Stop Controller Server called!', 'yellow')
         if self.controller_server is not None:
             self.controller_server.shutdown()
 
@@ -145,6 +145,14 @@ class Mupen64PlusEnv(gym.Env):
                         res_w=config['SCR_W'],
                         res_h=config['SCR_H'],
                         input_driver_path=config['INPUT_DRIVER_PATH']):
+
+        rom_path = os.path.abspath(os.path.expanduser(rom_path))
+        input_driver_path = os.path.abspath(os.path.expanduser(input_driver_path))
+
+        if not os.path.isfile(rom_path):
+            error = "Invalid rom_path: " + rom_path, 'red'
+            cprint(error)
+            raise Exception(error)
 
         cmd = config['MUPEN_CMD'] + \
               " --resolution %ix%i" \
@@ -168,10 +176,13 @@ class Mupen64PlusEnv(gym.Env):
         return emulator_process
 
     def _kill_emulator(self):
-        #cprint('Kill Emulator called!', 'red')
-        self.controller_server.send_controls(ControllerHTTPServer.NOOP)
-        if self.emulator_process is not None:
-            self.emulator_process.kill()
+        #cprint('Kill Emulator called!', 'yellow')
+        try:
+            self.controller_server.send_controls(ControllerHTTPServer.NOOP)
+            if self.emulator_process is not None:
+                self.emulator_process.kill()
+        except AttributeError:
+            pass # We may be shut down during intialization before these attributes have been set
 
 
 ###############################################
