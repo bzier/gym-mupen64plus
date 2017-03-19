@@ -49,7 +49,7 @@ class Mupen64PlusEnv(gym.Env):
     __metaclass__ = abc.ABCMeta
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, rom_path):
+    def __init__(self, rom_name):
         self.step_count = 0
         self.running = True
         self.episode_over = False
@@ -58,7 +58,7 @@ class Mupen64PlusEnv(gym.Env):
                                                    config['SCR_H'] *
                                                    config['SCR_D']))
         self.controller_server, self.controller_server_thread = self._start_controller_server()
-        self.emulator_process = self._start_emulator(rom_path=rom_path)
+        self.emulator_process = self._start_emulator(rom_name=rom_name)
         self._navigate_menu()
 
         self.observation_space = \
@@ -141,18 +141,26 @@ class Mupen64PlusEnv(gym.Env):
             self.controller_server.shutdown()
 
     def _start_emulator(self,
-                        rom_path,
+                        rom_name,
                         res_w=config['SCR_W'],
                         res_h=config['SCR_H'],
                         input_driver_path=config['INPUT_DRIVER_PATH']):
 
-        rom_path = os.path.abspath(os.path.expanduser(rom_path))
-        input_driver_path = os.path.abspath(os.path.expanduser(input_driver_path))
+        rom_path = os.path.abspath(
+            os.path.join(os.path.dirname(inspect.stack()[0][1]),
+                         '../ROMs',
+                         rom_name))
 
         if not os.path.isfile(rom_path):
-            error = "Invalid rom_path: " + rom_path, 'red'
-            cprint(error)
-            raise Exception(error)
+            msg = "ROM not found: " + rom_path
+            cprint(msg, 'red')
+            raise Exception(msg)
+
+        input_driver_path = os.path.abspath(os.path.expanduser(input_driver_path))
+        if not os.path.isfile(input_driver_path):
+            msg = "Input driver not found: " + input_driver_path
+            cprint(msg, 'red')
+            raise Exception(msg)
 
         cmd = config['MUPEN_CMD'] + \
               " --resolution %ix%i" \

@@ -115,6 +115,8 @@ A more complete example AI agent will be linked later.
 
 *Links to ROM files will not be included here. Use your ninja skills as appropriate.*
 
+ROM files can be placed in `./gym_mupen64plus/ROMs/`.
+
 Here is a list of games that have been wrapped. Each game may support multiple 'modes' with different levels or missions configured. See each of the games' pages for more details.
 * [MarioKart64](gym_mupen64plus/envs/MarioKart64/README.md)
 

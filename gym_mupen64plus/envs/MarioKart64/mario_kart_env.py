@@ -29,7 +29,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     MAP_CHOICE = 0
 
     def __init__(self, character='mario'):
-        super(MarioKartEnv, self).__init__(mk_config['ROM_PATH'])
+        super(MarioKartEnv, self).__init__(mk_config['ROM_NAME'])
         self.end_episode_confidence = 0
         self._set_character(character)
         self.lap = 1
