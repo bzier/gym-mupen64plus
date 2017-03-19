@@ -17,4 +17,4 @@ OFFSET_Y: 240
 MUPEN_CMD: mupen64plus
 
 # The path to the mupen64plus input driver:
-INPUT_DRIVER_PATH: /[...]/mupen64plus/mupen64plus-input-bot/mupen64plus-input-bot.so
+INPUT_DRIVER_PATH: /usr/local/lib/mupen64plus/mupen64plus-input-bot.so
