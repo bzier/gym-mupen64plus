@@ -10,8 +10,16 @@ SCR_H: 480
 SCR_D: 3
 
 # The offset location of where the emulator window appears on screen:
+# (has no effect when using XVFB - offset is 0,0)
 OFFSET_X: 400
 OFFSET_Y: 240
+
+# XVFB config:
+USE_XVFB: true
+XVFB_CMD: Xvfb
+XVFB_DISPLAY: :1
+TMP_DIR: /dev/shm
+VGLRUN_CMD: vglrun
 
 # The command to invoke the mupen64plus emulator process:
 MUPEN_CMD: mupen64plus

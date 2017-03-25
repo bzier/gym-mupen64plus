@@ -17,7 +17,6 @@ from gym.utils import seeding
 import numpy as np
 
 import wx
-wx.App()
 
 
 ###############################################
@@ -58,7 +57,7 @@ class Mupen64PlusEnv(gym.Env):
                                                    config['SCR_H'] *
                                                    config['SCR_D']))
         self.controller_server, self.controller_server_thread = self._start_controller_server()
-        self.emulator_process = self._start_emulator(rom_name=rom_name)
+        self.xvfb_process, self.emulator_process = self._start_emulator(rom_name=rom_name)
         self._navigate_menu()
 
         self.observation_space = \
@@ -82,11 +81,19 @@ class Mupen64PlusEnv(gym.Env):
 
     def _observe(self):
         #cprint('Observe called!', 'yellow')
+
+        if config['USE_XVFB']:
+            offset_x = 0
+            offset_y = 0
+        else:
+            offset_x = config['OFFSET_X']
+            offset_y = config['OFFSET_Y']
+
         bmp = wx.Bitmap(config['SCR_W'], config['SCR_H'])
         wx.MemoryDC(bmp).Blit(0, 0,
                               config['SCR_W'], config['SCR_H'],
                               wx.ScreenDC(),
-                              config['OFFSET_X'], config['OFFSET_Y'])
+                              offset_x, offset_y)
         bmp.CopyToBuffer(self.pixel_array)
 
         self.numpy_array = np.frombuffer(self.pixel_array, dtype=np.uint8)
@@ -144,6 +151,7 @@ class Mupen64PlusEnv(gym.Env):
                         rom_name,
                         res_w=config['SCR_W'],
                         res_h=config['SCR_H'],
+                        res_d=config['SCR_D'],
                         input_driver_path=config['INPUT_DRIVER_PATH']):
 
         rom_path = os.path.abspath(
@@ -162,26 +170,48 @@ class Mupen64PlusEnv(gym.Env):
             cprint(msg, 'red')
             raise Exception(msg)
 
-        cmd = config['MUPEN_CMD'] + \
-              " --resolution %ix%i" \
-              " --input %s" \
-              " %s" \
-              % (res_w, res_h,
-                 input_driver_path,
-                 rom_path)
+        cmd = [config['MUPEN_CMD'],
+               "--resolution %ix%i" % (res_w, res_h),
+               "--input %s" % input_driver_path,
+               rom_path]
+
+        xvfb_proc = None
+        if config['USE_XVFB']:
+
+            xvfb_cmd = [config['XVFB_CMD'],
+                        config['XVFB_DISPLAY'],
+                        "-screen",
+                        "0",
+                        "%ix%ix%i" % (res_w, res_h, res_d * 8),
+                        "-fbdir",
+                        config['TMP_DIR']]
+
+            print('Starting xvfb with command: %s' % xvfb_cmd)
+
+            xvfb_proc = subprocess.Popen(xvfb_cmd, shell=False, stderr=subprocess.STDOUT)
+
+            os.environ["DISPLAY"] = config['XVFB_DISPLAY']
+
+            cmd = [config['VGLRUN_CMD']] + cmd
 
         print('Starting emulator with comand: %s' % cmd)
 
-        emulator_process = subprocess.Popen(cmd.split(' '),
+        emulator_process = subprocess.Popen(cmd,
                                             shell=False,
                                             stderr=subprocess.STDOUT)
+
+        # Need to initialize this after the DISPLAY env var has been set
+        # so it attaches to the correct X display; otherwise screenshots
+        # come from the wrong place.
+        wx.App()
+
         emu_mon = EmulatorMonitor()
         monitor_thread = threading.Thread(target=emu_mon.monitor_emulator,
                                           args=[emulator_process])
         monitor_thread.daemon = True
         monitor_thread.start()
 
-        return emulator_process
+        return xvfb_proc, emulator_process
 
     def _kill_emulator(self):
         #cprint('Kill Emulator called!', 'yellow')
@@ -189,6 +219,8 @@ class Mupen64PlusEnv(gym.Env):
             self.controller_server.send_controls(ControllerHTTPServer.NOOP)
             if self.emulator_process is not None:
                 self.emulator_process.kill()
+            if self.xvfb_process is not None:
+                self.xvfb_process.kill()
         except AttributeError:
             pass # We may be shut down during intialization before these attributes have been set
 
