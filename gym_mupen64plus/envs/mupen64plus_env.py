@@ -49,6 +49,7 @@ class Mupen64PlusEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self, rom_name):
+        self.viewer = None
         self.step_count = 0
         self.running = True
         self.episode_over = False
@@ -123,9 +124,20 @@ class Mupen64PlusEnv(gym.Env):
         return self._observe()
 
     def _render(self, mode='human', close=False):
-        # TODO: Implement xvfb support for background execution,
-        # and implement this render method to display the window
-        pass
+        if close:
+            if self.viewer is not None:
+                self.viewer.close()
+                self.viewer = None
+            return
+        img = self.numpy_array
+        if mode == 'rgb_array':
+            return img
+        elif mode == 'human':
+            from gym.envs.classic_control import rendering
+            if self.viewer is None:
+                self.viewer = rendering.SimpleImageViewer()
+            self.viewer.imshow(img)
+        
 
     def _close(self):
         cprint('Close called!', 'yellow')
@@ -171,9 +183,13 @@ class Mupen64PlusEnv(gym.Env):
             raise Exception(msg)
 
         cmd = [config['MUPEN_CMD'],
-               "--resolution %ix%i" % (res_w, res_h),
-               "--input %s" % input_driver_path,
+               "--resolution",
+               "%ix%i" % (res_w, res_h),
+               "--input",
+               input_driver_path,
                rom_path]
+
+        initial_disp = os.environ["DISPLAY"]
 
         xvfb_proc = None
         if config['USE_XVFB']:
@@ -190,6 +206,8 @@ class Mupen64PlusEnv(gym.Env):
 
             xvfb_proc = subprocess.Popen(xvfb_cmd, shell=False, stderr=subprocess.STDOUT)
 
+            time.sleep(2) # Give xvfb a couple seconds to start up
+
             os.environ["DISPLAY"] = config['XVFB_DISPLAY']
 
             cmd = [config['VGLRUN_CMD']] + cmd
@@ -197,6 +215,7 @@ class Mupen64PlusEnv(gym.Env):
         print('Starting emulator with comand: %s' % cmd)
 
         emulator_process = subprocess.Popen(cmd,
+                                            env=os.environ.copy(),
                                             shell=False,
                                             stderr=subprocess.STDOUT)
 
@@ -204,6 +223,9 @@ class Mupen64PlusEnv(gym.Env):
         # so it attaches to the correct X display; otherwise screenshots
         # come from the wrong place.
         wx.App()
+
+        # Restore the DISPLAY env var
+        os.environ["DISPLAY"] = initial_disp
 
         emu_mon = EmulatorMonitor()
         monitor_thread = threading.Thread(target=emu_mon.monitor_emulator,
