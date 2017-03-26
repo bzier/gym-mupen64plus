@@ -4,7 +4,7 @@ import os
 import yaml
 from termcolor import cprint
 from gym_mupen64plus.envs.mupen64plus_env \
-  import Mupen64PlusEnv, ControllerHTTPServer, IMAGE_HELPER
+  import Mupen64PlusEnv, ControllerState, IMAGE_HELPER
 
 mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "mario_kart_config.yml")))
 
@@ -35,14 +35,21 @@ class MarioKartEnv(Mupen64PlusEnv):
         self.lap = 1
 
     def _reset(self):
-        if self.episode_over:
-            self._navigate_post_race_menu()
-            self.episode_over = False
-        else:
-            # TODO: Implement pause and reset
-            pass
+        # Nothing to do on the first call to reset()
+        if self.reset_count > 0:
+            if self.episode_over:
+                self._navigate_post_race_menu()
+                self.episode_over = False
+            else:
+                self.controller_server.send_controls(ControllerState.NO_OP, start_button=1)
+                self.controller_server.send_controls(ControllerState.NO_OP)
+                self.controller_server.send_controls(ControllerState.JOYSTICK_DOWN)
+                self.controller_server.send_controls(ControllerState.NO_OP)
+                self.controller_server.send_controls(ControllerState.A_BUTTON)
+                for i in range(77):
+                    self.controller_server.send_controls(ControllerState.NO_OP)
 
-        return self._observe()
+        return super(MarioKartEnv, self)._reset()
 
     def _get_reward(self):
         lap = self._get_lap()
@@ -92,7 +99,7 @@ class MarioKartEnv(Mupen64PlusEnv):
         cur_col = 0
 
         while frame < 284:
-            action = ControllerHTTPServer.NOOP
+            action = ControllerState.NO_OP
 
             #  10 - Nintendo screen
             #  80 - Mario Kart splash screen
@@ -108,9 +115,9 @@ class MarioKartEnv(Mupen64PlusEnv):
             # 232 - OK
             # 284 - <Level loaded; turn over control>
             if frame in [10, 80, 120, 130, 132, 134, 160, 162, 202, 230, 232]:
-                action = ControllerHTTPServer.A_BUTTON
+                action = ControllerState.A_BUTTON
             elif frame in [125]:
-                action = ControllerHTTPServer.JOYSTICK_DOWN
+                action = ControllerState.JOYSTICK_DOWN
 
             # Frame 150 is the 'Player Select' screen
             if frame == 150:
@@ -118,12 +125,12 @@ class MarioKartEnv(Mupen64PlusEnv):
                 print('Player col: ', str(self.PLAYER_COL))
 
                 if cur_row != self.PLAYER_ROW:
-                    action = ControllerHTTPServer.JOYSTICK_DOWN
+                    action = ControllerState.JOYSTICK_DOWN
                     cur_row += 1
 
             if frame in range(151, 156) and frame % 2 == 0:
                 if cur_col != self.PLAYER_COL:
-                    action = ControllerHTTPServer.JOYSTICK_RIGHT
+                    action = ControllerState.JOYSTICK_RIGHT
                     cur_col += 1
 
             # Frame 195 is the 'Map Select' screen
@@ -135,15 +142,15 @@ class MarioKartEnv(Mupen64PlusEnv):
 
             if frame in range(195, 202) and frame %2 == 0:
                 if cur_col != self.MAP_SERIES:
-                    action = ControllerHTTPServer.JOYSTICK_RIGHT
+                    action = ControllerState.JOYSTICK_RIGHT
                     cur_col += 1
 
             if frame in range(223, 230) and frame %2 == 0:
                 if cur_row != self.MAP_CHOICE:
-                    action = ControllerHTTPServer.JOYSTICK_DOWN
+                    action = ControllerState.JOYSTICK_DOWN
                     cur_row += 1
 
-            if action != ControllerHTTPServer.NOOP:
+            if action != ControllerState.NO_OP:
                 print('Frame ', str(frame), ': ', str(action))
 
             self.controller_server.send_controls(action)
@@ -152,7 +159,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     def _navigate_post_race_menu(self):
         frame = 0
         while frame < 138:
-            action = ControllerHTTPServer.NOOP
+            action = ControllerState.NO_OP
 
             # Post race menu (previous choice selected by default)
             # - Retry
@@ -166,9 +173,9 @@ class MarioKartEnv(Mupen64PlusEnv):
             #  75 - Post race menu
             # 138 - <Level loaded; turn over control>
             if frame in [60, 75]:
-                action = ControllerHTTPServer.A_BUTTON
+                action = ControllerState.A_BUTTON
 
-            if action != ControllerHTTPServer.NOOP:
+            if action != ControllerState.NO_OP:
                 print('Frame ', str(frame), ': ', str(action))
 
             self.controller_server.send_controls(action)

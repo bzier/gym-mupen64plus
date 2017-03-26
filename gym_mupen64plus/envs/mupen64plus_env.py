@@ -3,6 +3,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import abc
 import array
 import inspect
+import json
 import os
 import subprocess
 import threading
@@ -51,6 +52,7 @@ class Mupen64PlusEnv(gym.Env):
     def __init__(self, rom_name):
         self.viewer = None
         self.screen = None
+        self.reset_count = 0
         self.step_count = 0
         self.running = True
         self.episode_over = False
@@ -121,7 +123,9 @@ class Mupen64PlusEnv(gym.Env):
     @abc.abstractmethod
     def _reset(self):
         cprint('Reset called!', 'yellow')
+        self.reset_count += 1
 
+        self.step_count = 0
         return self._observe()
 
     def _render(self, mode='human', close=False):
@@ -244,7 +248,7 @@ class Mupen64PlusEnv(gym.Env):
     def _kill_emulator(self):
         #cprint('Kill Emulator called!', 'yellow')
         try:
-            self.controller_server.send_controls(ControllerHTTPServer.NOOP)
+            self.controller_server.send_controls(ControllerState.NO_OP)
             if self.emulator_process is not None:
                 self.emulator_process.kill()
             if self.xvfb_process is not None:
@@ -266,10 +270,10 @@ class EmulatorMonitor:
 
 
 ###############################################
-class ControllerHTTPServer(HTTPServer, object):
+class ControllerState(object):
 
-    # Buttons
-    NOOP = [0, 0, 0, 0, 0]
+    # Controls
+    NO_OP = [0, 0, 0, 0, 0]
     A_BUTTON = [0, 0, 1, 0, 0]
     B_BUTTON = [0, 0, 0, 1, 0]
     RB_BUTTON = [0, 0, 0, 0, 1]
@@ -278,16 +282,32 @@ class ControllerHTTPServer(HTTPServer, object):
     JOYSTICK_LEFT = [-80, 0, 0, 0, 0]
     JOYSTICK_RIGHT = [80, 0, 0, 0, 0]
 
+    def __init__(self, controls=NO_OP, start_button=0):
+        self.START_BUTTON = start_button
+        self.X_AXIS = controls[0]
+        self.Y_AXIS = controls[1]
+        self.A_BUTTON = controls[2]
+        self.B_BUTTON = controls[3]
+        self.R_TRIG = controls[4]
+        self.L_TRIG = 0
+        self.Z_TRIG = 0
+
+    def to_json(self):
+        return json.dumps(self.__dict__)
+
+###############################################
+class ControllerHTTPServer(HTTPServer, object):
+
     def __init__(self, server_address, control_timeout):
         self.control_timeout = control_timeout
-        self.controls = ControllerHTTPServer.NOOP
+        self.controls = ControllerState()
         self.hold_response = True
         self.running = True
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
-    def send_controls(self, controls):
+    def send_controls(self, controls, start_button=0):
         #print('Send controls called')
-        self.controls = controls
+        self.controls = ControllerState(controls, start_button)
         self.hold_response = False
 
         # Wait for controls to be sent:
@@ -323,7 +343,7 @@ class ControllerHTTPServer(HTTPServer, object):
                 self.write_response(500, "SHUTDOWN")
 
             ### respond with controller output
-            self.write_response(200, self.server.controls)
+            self.write_response(200, self.server.controls.to_json())
 
             self.server.hold_response = True
             return
