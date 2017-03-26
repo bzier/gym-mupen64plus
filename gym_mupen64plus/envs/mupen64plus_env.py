@@ -38,7 +38,7 @@ class ImageHelper:
 
 config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "config.yml")))
 
-MILLIS_50 = 50.0 / 1000.0
+MILLISECOND = 1.0 / 1000.0
 
 IMAGE_HELPER = ImageHelper()
 
@@ -50,6 +50,7 @@ class Mupen64PlusEnv(gym.Env):
 
     def __init__(self, rom_name):
         self.viewer = None
+        self.screen = None
         self.step_count = 0
         self.running = True
         self.episode_over = False
@@ -93,7 +94,7 @@ class Mupen64PlusEnv(gym.Env):
         bmp = wx.Bitmap(config['SCR_W'], config['SCR_H'])
         wx.MemoryDC(bmp).Blit(0, 0,
                               config['SCR_W'], config['SCR_H'],
-                              wx.ScreenDC(),
+                              self.screen,
                               offset_x, offset_y)
         bmp.CopyToBuffer(self.pixel_array)
 
@@ -137,7 +138,6 @@ class Mupen64PlusEnv(gym.Env):
             if self.viewer is None:
                 self.viewer = rendering.SimpleImageViewer()
             self.viewer.imshow(img)
-        
 
     def _close(self):
         cprint('Close called!', 'yellow')
@@ -190,6 +190,7 @@ class Mupen64PlusEnv(gym.Env):
                rom_path]
 
         initial_disp = os.environ["DISPLAY"]
+        cprint('initial_disp: %s' % initial_disp, 'red')
 
         xvfb_proc = None
         if config['USE_XVFB']:
@@ -202,17 +203,18 @@ class Mupen64PlusEnv(gym.Env):
                         "-fbdir",
                         config['TMP_DIR']]
 
-            print('Starting xvfb with command: %s' % xvfb_cmd)
+            cprint('Starting xvfb with command: %s' % xvfb_cmd, 'yellow')
 
             xvfb_proc = subprocess.Popen(xvfb_cmd, shell=False, stderr=subprocess.STDOUT)
 
             time.sleep(2) # Give xvfb a couple seconds to start up
 
             os.environ["DISPLAY"] = config['XVFB_DISPLAY']
+            cprint('Changed DISPLAY to: %s' % os.environ["DISPLAY"], 'red')
 
             cmd = [config['VGLRUN_CMD']] + cmd
 
-        print('Starting emulator with comand: %s' % cmd)
+        cprint('Starting emulator with comand: %s' % cmd, 'yellow')
 
         emulator_process = subprocess.Popen(cmd,
                                             env=os.environ.copy(),
@@ -222,10 +224,14 @@ class Mupen64PlusEnv(gym.Env):
         # Need to initialize this after the DISPLAY env var has been set
         # so it attaches to the correct X display; otherwise screenshots
         # come from the wrong place.
+        cprint('Calling wx.App() with DISPLAY: %s' % os.environ["DISPLAY"], 'red')
         wx.App()
+        self.screen = wx.ScreenDC()
+        time.sleep(2) # Give wx a couple seconds to start up
 
         # Restore the DISPLAY env var
         os.environ["DISPLAY"] = initial_disp
+        cprint('Changed DISPLAY to: %s' % os.environ["DISPLAY"], 'red')
 
         emu_mon = EmulatorMonitor()
         monitor_thread = threading.Thread(target=emu_mon.monitor_emulator,
@@ -287,7 +293,7 @@ class ControllerHTTPServer(HTTPServer, object):
         # Wait for controls to be sent:
         start = time.time()
         while not self.hold_response and time.time() < start + self.control_timeout:
-            time.sleep(MILLIS_50)
+            time.sleep(MILLISECOND)
 
     def shutdown(self):
         self.running = False
@@ -308,7 +314,7 @@ class ControllerHTTPServer(HTTPServer, object):
         def do_GET(self):
 
             while self.server.running and self.server.hold_response:
-                time.sleep(MILLIS_50)
+                time.sleep(MILLISECOND)
 
             if not self.server.running:
                 print('Sending SHUTDOWN response')
