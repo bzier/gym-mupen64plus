@@ -86,6 +86,24 @@ A configuration file ([`config.yml`](gym_mupen64plus/envs/config.yml)) has been 
 Additionally, each game environment may specify configuration values which will be stored in a separate config file in the game's specific subdirectory (see each game's README for those details).
 
 
+## XVFB
+
+The environment is currently configured to use [XVFB](https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml) by default. This allows the emulator to run behind-the-scenes and simplifies configuration. The config file includes a flag to turn this behavior on/off (see below for details running with the flag turned off). 
+
+### Viewing the emulator in XVFB
+Since the emulator runs off-screen, the environment provides a `render()` call which displays a window with the screen pixels. Each call to `render()` will update this display. For example, an agent can make this call between each `step()`.
+
+### Connecting to XVFB with VNC
+When calling `reset()`, the environment handles navigating menus and getting the game ready for the next episode. This is a blocking call, so `render()` will not show what is happening in-between. An alternative view into the XVFB display is using VNC. You can connect a VNC server to the XVFB display using the following command (where `:1` matches the configured `XVFB_DISPLAY` value in `config.yml`):
+```bash
+x11vnc -display :1 -localhost -forever -viewonly &
+```
+Then you can use your favorite VNC client to connect to `localhost` to watch the XVFB display in real-time. Note that running the VNC server and client can cause some performance overhead.
+
+### Running without XVFB
+If XVFB is turned off, the emulator will run in your default X display manager. As a result, the display manager positions the emulator window (we have no control over where the window is positioned). This means that you will need to configure the offset values to ensure we are capturing the correct portion of the screen. Additionally, it means the emulator must remain the top-most window for the entirety of the session. Otherwise, the AI agent will see whatever is on-screen rather than the emulator window.
+
+
 ## Example Agents
 
 ### Simple Test:
