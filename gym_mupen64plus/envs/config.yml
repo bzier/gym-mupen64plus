@@ -1,7 +1,8 @@
 # The port number to use for the controller server:
 PORT_NUMBER: 8082
 
-# How long to block waiting for the controller server to send controls (the action) before returning:
+# How long, at most, in seconds to block waiting for the controller 
+#   server to send controls (the action) before returning:
 ACTION_TIMEOUT: 5
 
 # The width, height, and depth of the emulator window:

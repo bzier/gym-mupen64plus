@@ -25,6 +25,7 @@ Please create issues as you encounter them. Future work and ideas will be captur
 * wx
 
 ### Additional Dependencies
+*These dependencies must be manually installed following these instructions.*
 * Mupen64Plus
     ```bash
     #!/bin/bash
@@ -39,8 +40,8 @@ Please create issues as you encounter them. Future work and ideas will be captur
     git clone https://github.com/kevinhughes27/mupen64plus-input-bot
     cd mupen64plus-input-bot
     make all
+    sudo make install
     ```
-    *Note the path of the resulting .so file to add to the `config.yml` file*
 
 * One or more N64 ROMs (see the [Games](#games) section below)
 
@@ -80,7 +81,7 @@ pip install -e .
 
 ### Configuration
 
-A configuration file ([`config.yml`](gym_mupen64plus/envs/config.yml)) has been provided for the core wrapper where the primary settings are stored. This configuration will likely vary on your system, so please take a look at the available settings and adjust as necessary.
+A configuration file ([`config.yml`](gym_mupen64plus/envs/config.yml)) has been provided for the core wrapper where the primary settings are stored. This configuration may vary on your system, so please take a look at the available settings and adjust as necessary.
 
 Additionally, each game environment may specify configuration values which will be stored in a separate config file in the game's specific subdirectory (see each game's README for those details).
 
