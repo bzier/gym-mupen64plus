@@ -130,7 +130,7 @@ env.close()
 ```
 
 ### AI Agent:
-A more complete example AI agent will be linked later.
+The original inspiration for this project has now been updated to take advantage of this gym environment. It is an example of using supervised learning (hopefully soon adding reinforcement learning) to train an AI Agent that is capable of interacting with the environment. It utilizes the TensorFlow library for its machine learning. Check out TensorKart [here](https://github.com/kevinhughes27/TensorKart).
 
 
 ## Games
