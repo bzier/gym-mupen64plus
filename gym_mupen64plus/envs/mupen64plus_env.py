@@ -23,8 +23,6 @@ import wx
 ###############################################
 class ImageHelper:
 
-    BLACK_PIXEL = (0, 0, 0)
-
     def GetPixelColor(self, image_array, x, y):
         base_pixel = (x + (y * config['SCR_W'])) * 3
         red = image_array[base_pixel + 0]
