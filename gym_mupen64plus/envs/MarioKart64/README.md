@@ -17,21 +17,21 @@ A configuration file ([`mario_kart_config.yml`](mario_kart_config.yml)) has been
 
         This method sends `NOOP` to the controller server except in the following frames:
         
-        *      10: Nintendo screen - Press 'A'
-        *      80: Mario Kart splash screen - Press 'A'
-        *     120: Select number of players - Press 'A'
-        *     125: Select GrandPrix or TimeTrials - Joystick Down
-        *     130: Select TimeTrials - Press 'A'
-        *     132: Select Begin - Press 'A'
-        *     134: OK - Press 'A'
+        * 10: Nintendo screen - Press 'A'
+        * 80: Mario Kart splash screen - Press 'A'
+        * 120: Select number of players - Press 'A'
+        * 125: Select GrandPrix or TimeTrials - Joystick Down
+        * 130: Select TimeTrials - Press 'A'
+        * 132: Select Begin - Press 'A'
+        * 134: OK - Press 'A'
         * 150-156: Move to the correct player
-        *     160: Select player - Press 'A'
-        *     162: OK - Press 'A'
+        * 160: Select player - Press 'A'
+        * 162: OK - Press 'A'
         * 195-202: Move to the correct map series
-        *     202: Select map series - Press 'A'
+        * 202: Select map series - Press 'A'
         * 223-230: Move to the correct map choice
-        *     230: Select map choice - Press 'A'
-        *     232: OK - Press 'A'
+        * 230: Select map choice - Press 'A'
+        * 232: OK - Press 'A'
         
         
         At frame 284, the level is fully loaded and ready to go.
