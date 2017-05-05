@@ -53,6 +53,7 @@ class Mupen64PlusEnv(gym.Env):
         self.reset_count = 0
         self.step_count = 0
         self.running = True
+        self.app = None
         self.episode_over = False
         self.numpy_array = None
         self.pixel_array = array.array('B', [0] * (config['SCR_W'] *
@@ -227,7 +228,7 @@ class Mupen64PlusEnv(gym.Env):
         # so it attaches to the correct X display; otherwise screenshots
         # come from the wrong place.
         cprint('Calling wx.App() with DISPLAY: %s' % os.environ["DISPLAY"], 'red')
-        wx.App()
+        self.app = wx.App()
         self.screen = wx.ScreenDC()
         time.sleep(2) # Give wx a couple seconds to start up
 
