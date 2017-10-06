@@ -25,8 +25,6 @@ class MarioKartDiscreteLuigiRacewayEnv(MarioKartLuigiRacewayEnv):
         self.action_space = spaces.Discrete(12)
 
     def _step(self, action):
-        print('Step called with: ', action)
         controls = self.ACTION_MAP[action][1]
-        print('Using controls: ', controls)
 
         return super(MarioKartDiscreteLuigiRacewayEnv, self)._step(controls)
