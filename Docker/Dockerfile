@@ -33,9 +33,9 @@ RUN pip install --upgrade pip virtualenv
 # install VirtualGL (provides vglrun to allow us to run the emulator in XVFB)
 # (Check for new releases here: https://github.com/VirtualGL/virtualgl/releases)
 ENV VIRTUALGL_VERSION=2.5.2
-RUN wget 'https://sourceforge.net/projects/virtualgl/files/$VIRTUALGL_VERSION/virtualgl_$VIRTUALGL_VERSION_amd64.deb' && \
-    apt install ./virtualgl_$VIRTUALGL_VERSION_amd64.deb && \
-    rm virtualgl_$VIRTUALGL_VERSION_amd64.deb
+RUN wget "https://sourceforge.net/projects/virtualgl/files/${VIRTUALGL_VERSION}/virtualgl_${VIRTUALGL_VERSION}_amd64.deb" && \
+    apt install ./virtualgl_${VIRTUALGL_VERSION}_amd64.deb && \
+    rm virtualgl_${VIRTUALGL_VERSION}_amd64.deb
 
 
 # clone, build, and install the input bot
