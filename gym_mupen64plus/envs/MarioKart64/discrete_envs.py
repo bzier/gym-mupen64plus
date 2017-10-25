@@ -19,6 +19,8 @@ class MarioKartDiscreteLuigiRacewayEnv(MarioKartLuigiRacewayEnv):
         ("EXTREME_RIGHT", [ 80,   0, 1, 0, 0]),
     ]
 
+    ENABLE_CHECKPOINTS = True
+
     def __init__(self):
         super(MarioKartDiscreteLuigiRacewayEnv, self).__init__()
 
