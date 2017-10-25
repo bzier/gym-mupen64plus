@@ -188,6 +188,7 @@ class Mupen64PlusEnv(gym.Env):
         cmd = [config['MUPEN_CMD'],
                "--resolution",
                "%ix%i" % (res_w, res_h),
+               "--audio", "dummy",
                "--input",
                input_driver_path,
                rom_path]
