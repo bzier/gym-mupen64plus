@@ -95,7 +95,7 @@ class MarioKartEnv(Mupen64PlusEnv):
                 return self.DEFAULT_STEP_REWARD
 
     def _get_lap(self):
-        pix_arr = self.pixel_array
+        pix_arr = self.numpy_array
         point_a = IMAGE_HELPER.GetPixelColor(pix_arr, 203, 51)
         if point_a in self.LAP_COLOR_MAP:
             return self.LAP_COLOR_MAP[point_a]
@@ -119,7 +119,7 @@ class MarioKartEnv(Mupen64PlusEnv):
             return -1
 
     def _checkpoint(self, checkpoint_points):
-        pix_arr = self.pixel_array
+        pix_arr = self.numpy_array
         colored_dots = map(lambda point: IMAGE_HELPER.GetPixelColor(pix_arr, point[0], point[1]), 
                            checkpoint_points)
         pixel_means = np.mean(colored_dots, 1)
@@ -129,7 +129,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     def _evaluate_end_state(self):
         #cprint('Evaluate End State called!','yellow')
-        pix_arr = self.pixel_array
+        pix_arr = self.numpy_array
 
         upper_left = IMAGE_HELPER.GetPixelColor(pix_arr, 19, 19)
         upper_right = IMAGE_HELPER.GetPixelColor(pix_arr, 620, 19)
