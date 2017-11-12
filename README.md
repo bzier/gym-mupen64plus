@@ -22,7 +22,7 @@ Please create issues as you encounter them. Future work and ideas will be captur
 * numpy
 * PyYAML
 * termcolor
-* wx
+* mss
 
 ### Additional Dependencies
 *These dependencies must be manually installed following these instructions.*
