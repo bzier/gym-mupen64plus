@@ -43,19 +43,15 @@ A configuration file ([`mario_kart_config.yml`](mario_kart_config.yml)) has been
 
         *Checkpoint rewards*:
         
-        There are also environment options to allow checkpoint rewards. The checkpoint reward system monitors the character progress on the mini-map. It samples designated points on the mini-map (which should be near-white pixels). When the character reaches a checkpoint, the mini indicator covers the sampled pixel with red/black, which is detected and results in a reward of `100`.
+        There are also environment options to allow checkpoint rewards. As the character progresses, a colored line is drawn around the edge of the screen. This line is drawn in one of three colors that designates the current lap (lap 1 - blue, lap 2 - yellow, lap 3 - red). The checkpoint reward system samples designated points on the HUD around the edges and detects progress using the pixel colors. As those designated checkpoints are reached and detected, a reward of `100` is given.
 
         * The checkpoints are tracked per lap and can only be achieved once per lap
 
           > This prevents an agent from learning to do doughnuts over a checkpoint. 
 
-        * The checkpoints must be earned sequentially
-        
-        * The checkpoints may not be skipped
-        
-          >Some areas of the course allow the character to drive far enough off road to bypass the checkpoint on the mini-map. In this case, the character will not achieve checkpoint rewards, even if it gets back on track.
+        * The game will also un-draw the colored lines when the character drives backwards. The checkpoint reward system detects this and gives a reward of `-??`. This discourages backward movement by an AI agent.
 
-          > These two rules simplify things and eliminate the need to determine if the character is driving backwards and collecting the checkpoints in reverse.
+        [![HUDProgressScreenshot](screenshots/hud_progress_t.png)](screenshots/hud_progress.png)
 
 
     * `_evaluate_end_state()` determines whether or not the episode is over.
