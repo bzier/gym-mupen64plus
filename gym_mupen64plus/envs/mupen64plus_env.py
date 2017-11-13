@@ -25,9 +25,9 @@ class ImageHelper:
 
     def GetPixelColor(self, image_array, x, y):
         base_pixel = image_array[y][x]
-        blue = base_pixel[0]
+        red = base_pixel[0]
         green = base_pixel[1]
-        red = base_pixel[2]
+        blue = base_pixel[2]
         return (red, green, blue)
 
 
