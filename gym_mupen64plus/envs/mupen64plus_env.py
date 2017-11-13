@@ -282,7 +282,8 @@ class ControllerState(object):
     JOYSTICK_LEFT = [-80, 0, 0, 0, 0]
     JOYSTICK_RIGHT = [80, 0, 0, 0, 0]
 
-    def __init__(self, controls=NO_OP, start_button=0):
+    # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
+    def __init__(self, controls=NO_OP, start_button=0, r_cbutton=0):
         self.START_BUTTON = start_button
         self.X_AXIS = controls[0]
         self.Y_AXIS = controls[1]
@@ -291,6 +292,7 @@ class ControllerState(object):
         self.R_TRIG = controls[4]
         self.L_TRIG = 0
         self.Z_TRIG = 0
+        self.R_CBUTTON = r_cbutton
 
     def to_json(self):
         return json.dumps(self.__dict__)
@@ -305,9 +307,10 @@ class ControllerHTTPServer(HTTPServer, object):
         self.running = True
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
-    def send_controls(self, controls, start_button=0):
+    # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
+    def send_controls(self, controls, start_button=0, r_cbutton=0):
         #print('Send controls called')
-        self.controls = ControllerState(controls, start_button)
+        self.controls = ControllerState(controls, start_button, r_cbutton)
         self.hold_response = False
 
         # Wait for controls to be sent:
@@ -339,7 +342,7 @@ class ControllerHTTPServer(HTTPServer, object):
             if not self.server.running:
                 print('Sending SHUTDOWN response')
                 # TODO: This sometimes fails with a broken pipe because
-                # the emulator has already stopped. Should handle gracefully
+                # the emulator has already stopped. Should handle gracefully (Issue #4)
                 self.write_response(500, "SHUTDOWN")
 
             ### respond with controller output

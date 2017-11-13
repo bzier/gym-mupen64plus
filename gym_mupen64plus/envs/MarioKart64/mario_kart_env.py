@@ -135,12 +135,12 @@ class MarioKartEnv(Mupen64PlusEnv):
         upper_right = IMAGE_HELPER.GetPixelColor(pix_arr, 620, 19)
         bottom_left = IMAGE_HELPER.GetPixelColor(pix_arr, 19, 460)
         bottom_right = IMAGE_HELPER.GetPixelColor(pix_arr, 620, 460)
-
+        
         if upper_left == upper_right == bottom_left == bottom_right:
             self.end_episode_confidence += 1
         else:
             self.end_episode_confidence = 0
-
+            
         if self.end_episode_confidence > self.END_EPISODE_THRESHOLD:
             return True
         else:
@@ -166,6 +166,7 @@ class MarioKartEnv(Mupen64PlusEnv):
             # 202 - Select map series
             # 230 - Select map choice
             # 232 - OK
+            # 263 - Toggle through HUD options
             # 284 - <Level loaded; turn over control>
             if frame in [10, 80, 120, 130, 132, 134, 160, 162, 202, 230, 232]:
                 action = ControllerState.A_BUTTON
@@ -202,6 +203,12 @@ class MarioKartEnv(Mupen64PlusEnv):
                 if cur_row != self.MAP_CHOICE:
                     action = ControllerState.JOYSTICK_DOWN
                     cur_row += 1
+
+            # Just as the course loads, change the HUD view
+            if frame in [263, 265]:
+                self.controller_server.send_controls(ControllerState.NO_OP, r_cbutton=1)
+                frame += 1
+                continue
 
             if action != ControllerState.NO_OP:
                 print('Frame ' + str(frame) + ': ' + str(action))
