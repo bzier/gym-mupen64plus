@@ -18,6 +18,9 @@ import MarioKartLuigiRacewayEnv, \
        MarioKartBansheeBoardwalkEnv, \
        MarioKartRainbowRoadEnv
 
+from gym_mupen64plus.envs.MarioKart64.discrete_envs \
+import MarioKartDiscreteLuigiRacewayEnv
+
 ##### MUSHROOM CUP ####
 register(
     id='Mario-Kart-Luigi-Raceway-v0',
@@ -193,6 +196,19 @@ register(
     tags={
         'mupen': True,
         'cup': 'Special',
+        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+    },
+    nondeterministic=True,
+)
+
+### DISCRETE ACTION SPACE ###
+
+register(
+    id='Mario-Kart-Discrete-Luigi-Raceway-v0',
+    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartDiscreteLuigiRacewayEnv',
+    tags={
+        'mupen': True,
+        'cup': 'Mushroom',
         'wrapper_config.TimeLimit.max_episode_steps': 100000,
     },
     nondeterministic=True,

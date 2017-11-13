@@ -5,6 +5,7 @@ import yaml
 from termcolor import cprint
 from gym_mupen64plus.envs.mupen64plus_env \
   import Mupen64PlusEnv, ControllerState, IMAGE_HELPER
+import numpy as np
 
 mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "mario_kart_config.yml")))
 
@@ -17,7 +18,9 @@ class MarioKartEnv(Mupen64PlusEnv):
                      (66, 49, 66): 3}
 
     DEFAULT_STEP_REWARD = -1
-    LAP_REWARD = 10
+    LAP_REWARD = 100
+    CHECKPOINT_REWARD = 100
+    END_REWARD = 1000
     END_DETECTION_REWARD_REFUND = 215
 
     END_EPISODE_THRESHOLD = 30
@@ -28,15 +31,23 @@ class MarioKartEnv(Mupen64PlusEnv):
     MAP_SERIES = 0
     MAP_CHOICE = 0
 
+    ENABLE_CHECKPOINTS = False
+
     def __init__(self, character='mario'):
         super(MarioKartEnv, self).__init__(mk_config['ROM_NAME'])
         self.end_episode_confidence = 0
         self._set_character(character)
-        self.lap = 1
 
     def _reset(self):
+        
+        self.lap = 1
+
+        if self.ENABLE_CHECKPOINTS:
+            self._checkpoint_tracker = [[False for i in range(len(self.CHECKPOINTS))] for j in range(3)]
+        
         # Nothing to do on the first call to reset()
         if self.reset_count > 0:
+
             if self.episode_over:
                 self._navigate_post_race_menu()
                 self.episode_over = False
@@ -49,30 +60,72 @@ class MarioKartEnv(Mupen64PlusEnv):
                 for i in range(77):
                     self.controller_server.send_controls(ControllerState.NO_OP)
 
+
         return super(MarioKartEnv, self)._reset()
 
     def _get_reward(self):
-        lap = self._get_lap()
+        cur_lap = self._get_lap()
+
+        if self.ENABLE_CHECKPOINTS:
+            cur_ckpt = self._get_current_checkpoint()
 
         #cprint('Get Reward called!','yellow')
         if self.episode_over:
             # Refund the reward lost in the frames between the race finish and end episode detection
-            return self.END_DETECTION_REWARD_REFUND
+            return self.END_DETECTION_REWARD_REFUND + self.END_REWARD
         else:
-            if lap != self.lap:
-                self.lap = lap
+            if cur_lap != self.lap:
+                self.lap = cur_lap
+                cprint('Lap %s!' % self.lap, 'red')
                 return self.LAP_REWARD
+
+            elif self.ENABLE_CHECKPOINTS and cur_ckpt > -1 and not self._checkpoint_tracker[self.lap - 1][cur_ckpt]:
+
+                # Only allow sequential forward achievement, no backward or skipping allowed. 
+                # e.g. If you hit checkpoint 6, you must have hit all prior checkpoints (1-5)
+                #      on this lap for it to count
+                if not all(self._checkpoint_tracker[self.lap - 1][:-(len(self.CHECKPOINTS)-cur_ckpt)]):
+                    #cprint('CHECKPOINT hit but not achieved (not all prior points were hit)!', 'red')
+                    return self.DEFAULT_STEP_REWARD
+
+                cprint('CHECKPOINT achieved!', 'red')
+                self._checkpoint_tracker[self.lap - 1][cur_ckpt] = True
+                return self.CHECKPOINT_REWARD
             else:
                 return self.DEFAULT_STEP_REWARD
 
     def _get_lap(self):
         pix_arr = self.pixel_array
-        point_a = IMAGE_HELPER.GetPixelColor(pix_arr, 203, 50)
+        point_a = IMAGE_HELPER.GetPixelColor(pix_arr, 203, 51)
         if point_a in self.LAP_COLOR_MAP:
             return self.LAP_COLOR_MAP[point_a]
         else:
             # TODO: What should this do? The pixel is not known, so assume same lap?
             return self.lap
+
+    def _get_current_checkpoint(self):
+        cps = map(self._checkpoint, self.CHECKPOINTS)
+        if any(cps):
+            #cprint('--------------------------------------------','red')
+            #cprint('Checkpoints: %s' % cps, 'yellow')
+
+            checkpoint = np.argmax(cps)
+
+            #cprint('Checkpoint: %s' % checkpoint, 'cyan')
+
+            return checkpoint
+        else:
+            # We're not at a checkpoint
+            return -1
+
+    def _checkpoint(self, checkpoint_points):
+        pix_arr = self.pixel_array
+        colored_dots = map(lambda point: IMAGE_HELPER.GetPixelColor(pix_arr, point[0], point[1]), 
+                           checkpoint_points)
+        pixel_means = np.mean(colored_dots, 1)
+        #print colored_dots
+        #cprint('Pixel means: %s' % pixel_means, 'cyan')
+        return any(val < 100 for val in pixel_means)
 
     def _evaluate_end_state(self):
         #cprint('Evaluate End State called!','yellow')
@@ -121,8 +174,8 @@ class MarioKartEnv(Mupen64PlusEnv):
 
             # Frame 150 is the 'Player Select' screen
             if frame == 150:
-                print('Player row: ', str(self.PLAYER_ROW))
-                print('Player col: ', str(self.PLAYER_COL))
+                print('Player row: ' + str(self.PLAYER_ROW))
+                print('Player col: ' + str(self.PLAYER_COL))
 
                 if cur_row != self.PLAYER_ROW:
                     action = ControllerState.JOYSTICK_DOWN
@@ -137,8 +190,8 @@ class MarioKartEnv(Mupen64PlusEnv):
             if frame == 195:
                 cur_row = 0
                 cur_col = 0
-                print('Map series: ', str(self.MAP_SERIES))
-                print('Map choice: ', str(self.MAP_CHOICE))
+                print('Map series: ' + str(self.MAP_SERIES))
+                print('Map choice: ' + str(self.MAP_CHOICE))
 
             if frame in range(195, 202) and frame %2 == 0:
                 if cur_col != self.MAP_SERIES:
@@ -151,7 +204,7 @@ class MarioKartEnv(Mupen64PlusEnv):
                     cur_row += 1
 
             if action != ControllerState.NO_OP:
-                print('Frame ', str(frame), ': ', str(action))
+                print('Frame ' + str(frame) + ': ' + str(action))
 
             self.controller_server.send_controls(action)
             frame += 1
@@ -176,7 +229,7 @@ class MarioKartEnv(Mupen64PlusEnv):
                 action = ControllerState.A_BUTTON
 
             if action != ControllerState.NO_OP:
-                print('Frame ', str(frame), ': ', str(action))
+                print('Frame ' + str(frame) + ': ' + str(action))
 
             self.controller_server.send_controls(action)
             frame += 1
