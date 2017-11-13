@@ -221,6 +221,7 @@ class Mupen64PlusEnv(gym.Env):
                                             shell=False,
                                             stderr=subprocess.STDOUT)
 
+        # TODO: Test and cleanup:
         # May need to initialize this after the DISPLAY env var has been set
         # so it attaches to the correct X display; otherwise screenshots may
         # come from the wrong place. This used to be true when we were using
