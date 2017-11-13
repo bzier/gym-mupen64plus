@@ -88,12 +88,16 @@ class Mupen64PlusEnv(gym.Env):
             offset_x = config['OFFSET_X']
             offset_y = config['OFFSET_Y']
 
-        self.numpy_array = \
-            np.array(self.mss_grabber.grab({"top": offset_y, 
+        image_array = \
+            np.array(self.mss_grabber.grab({"top": offset_y,
                                             "left": offset_x,
                                             "width": config['SCR_W'],
                                             "height": config['SCR_H']}),
                      dtype=np.uint8)
+
+        # drop the alpha channel and flip red and blue channels (BGRA -> RGB)
+        self.numpy_array = \
+            np.flip(image_array[:, :, :3], 2)
 
         return self.numpy_array
 
