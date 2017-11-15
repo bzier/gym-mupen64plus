@@ -13,17 +13,59 @@ mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][
 class MarioKartEnv(Mupen64PlusEnv):
     __metaclass__ = abc.ABCMeta
 
-    LAP_COLOR_MAP = {(214, 156, 222): 1,
-                     (198, 140, 198): 2,
-                     (66, 49, 66): 3}
+    # Indicates the color value of the pixel at point (203, 51)
+    # This is where the lap number is present in the default HUD
+    LAP_COLOR_MAP = {(214, 156, 222): 1, # Lap 1
+                     (198, 140, 198): 2, # Lap 2
+                     ( 66,  49,  66): 3} # Lap 3
+
+    HUD_PROGRESS_COLOR_VALUES = {(000, 000, 255): 1, #   Blue: Lap 1
+                                 (255, 255, 000): 2, # Yellow: Lap 2
+                                 (255, 000, 000): 3} #    Red: Lap 3
+
+    # Sample 4 pixels for each checkpoint to reduce the
+    # likelihood of a pixel matching the color by chance
+    CHECKPOINT_LOCATIONS = [
+        #### Starting with the upper left corner and moving clockwise ####
+        [( 64,  36), ( 65,  36), ( 64,  37), ( 65,  37)],
+
+        #### Across the top ####
+        [(194,  36), (195,  36), (194,  37), (195,  37)],
+        [(324,  36), (325,  36), (324,  37), (325,  37)],
+        [(454,  36), (455,  36), (454,  37), (455,  37)],
+
+        #### Upper right corner ####
+        [(584,  36), (585,  36), (584,  37), (585,  37)],
+
+        #### Down the right side ####
+        [(584, 138), (585, 138), (584, 139), (585, 139)],
+        [(584, 240), (585, 240), (584, 241), (585, 241)],
+        [(584, 342), (585, 342), (584, 343), (585, 343)],
+
+        #### Lower right corner is empty; grab a chunk above it and to its left ####
+        [(584, 443), (585, 443), (583, 444), (583, 445)],
+
+        #### Across the bottom ####
+        [(454, 444), (455, 444), (454, 445), (455, 445)],
+        [(324, 444), (325, 444), (324, 445), (325, 445)],
+        [(194, 444), (195, 444), (194, 445), (195, 445)],
+
+        #### Lower left corner ####
+        [( 64, 444), ( 65, 444), ( 64, 445), ( 65, 445)],
+
+        #### Up the left side ####
+        [( 64, 342), ( 65, 342), ( 64, 343), ( 65, 343)],
+        [( 64, 240), ( 65, 240), ( 64, 241), ( 65, 241)],
+        [( 64, 138), ( 65, 138), ( 64, 139), ( 65, 139)],
+    ]
 
     DEFAULT_STEP_REWARD = -1
     LAP_REWARD = 100
     CHECKPOINT_REWARD = 100
     END_REWARD = 1000
-    END_DETECTION_REWARD_REFUND = 215
 
     END_EPISODE_THRESHOLD = 30
+    END_DETECTION_REWARD_REFUND = END_EPISODE_THRESHOLD - 1
 
     PLAYER_ROW = 0
     PLAYER_COL = 0
@@ -43,7 +85,8 @@ class MarioKartEnv(Mupen64PlusEnv):
         self.lap = 1
 
         if self.ENABLE_CHECKPOINTS:
-            self._checkpoint_tracker = [[False for i in range(len(self.CHECKPOINTS))] for j in range(3)]
+            self._checkpoint_tracker = [[False for i in range(len(self.CHECKPOINT_LOCATIONS))] for j in range(3)]
+            self.last_known_ckpt = -1
         
         # Nothing to do on the first call to reset()
         if self.reset_count > 0:
@@ -60,7 +103,6 @@ class MarioKartEnv(Mupen64PlusEnv):
                 for i in range(77):
                     self.controller_server.send_controls(ControllerState.NO_OP)
 
-
         return super(MarioKartEnv, self)._reset()
 
     def _get_reward(self):
@@ -74,77 +116,94 @@ class MarioKartEnv(Mupen64PlusEnv):
             # Refund the reward lost in the frames between the race finish and end episode detection
             return self.END_DETECTION_REWARD_REFUND + self.END_REWARD
         else:
-            if cur_lap != self.lap:
+            if cur_lap > self.lap:
                 self.lap = cur_lap
                 cprint('Lap %s!' % self.lap, 'red')
                 return self.LAP_REWARD
 
             elif self.ENABLE_CHECKPOINTS and cur_ckpt > -1 and not self._checkpoint_tracker[self.lap - 1][cur_ckpt]:
-
-                # Only allow sequential forward achievement, no backward or skipping allowed. 
-                # e.g. If you hit checkpoint 6, you must have hit all prior checkpoints (1-5)
-                #      on this lap for it to count
-                if not all(self._checkpoint_tracker[self.lap - 1][:-(len(self.CHECKPOINTS)-cur_ckpt)]):
-                    #cprint('CHECKPOINT hit but not achieved (not all prior points were hit)!', 'red')
-                    return self.DEFAULT_STEP_REWARD
-
-                cprint('CHECKPOINT achieved!', 'red')
                 self._checkpoint_tracker[self.lap - 1][cur_ckpt] = True
+                cprint('CHECKPOINT achieved!', 'red')
                 return self.CHECKPOINT_REWARD
+            
             else:
                 return self.DEFAULT_STEP_REWARD
 
     def _get_lap(self):
-        pix_arr = self.numpy_array
-        point_a = IMAGE_HELPER.GetPixelColor(pix_arr, 203, 51)
-        if point_a in self.LAP_COLOR_MAP:
-            return self.LAP_COLOR_MAP[point_a]
-        else:
-            # TODO: What should this do? The pixel is not known, so assume same lap?
-            return self.lap
+        # The first checkpoint is the upper left corner. It's value should tell us the lap.
+        ckpt_val = self._evaluate_checkpoint(self.CHECKPOINT_LOCATIONS[0])
+
+        # If it is unknown, assume same lap (character icon is likely covering the corner)
+        return ckpt_val if ckpt_val != -1 else self.lap
 
     def _get_current_checkpoint(self):
-        cps = map(self._checkpoint, self.CHECKPOINTS)
-        if any(cps):
-            #cprint('--------------------------------------------','red')
-            #cprint('Checkpoints: %s' % cps, 'yellow')
+        checkpoint_values = map(self._evaluate_checkpoint, self.CHECKPOINT_LOCATIONS)
 
-            checkpoint = np.argmax(cps)
+        # Check if we have achieved any checkpoints
+        if any(val > -1 for val in checkpoint_values):
+            
+            # argmin tells us the first index with the lowest value
+            index_of_lowest_val = np.argmin(checkpoint_values)
 
-            #cprint('Checkpoint: %s' % checkpoint, 'cyan')
+            if index_of_lowest_val != 0:
+                # If the argmin is anything but 0, we have achieved
+                # all the checkpoints up through the prior index
+                checkpoint = index_of_lowest_val - 1
+            else:
+                # If the argmin is at index 0, they are all the same value,
+                # which means we've hit all the checkpoints for this lap
+                checkpoint = len(checkpoint_values) - 1
+            
+            #if self.last_known_ckpt != checkpoint:
+            #    cprint('--------------------------------------------','red')
+            #    cprint('Checkpoints: %s' % checkpoint_values, 'yellow')
+            #    cprint('Checkpoint: %s' % checkpoint, 'cyan')
 
+            self.last_known_ckpt = checkpoint
             return checkpoint
         else:
-            # We're not at a checkpoint
+            # We haven't hit any checkpoint yet :(
             return -1
 
-    def _checkpoint(self, checkpoint_points):
+    # https://stackoverflow.com/a/3844948
+    # Efficiently determines if all items in a list are equal by 
+    # counting the occurrences of the first item in the list and 
+    # checking if the count matches the length of the list:
+    def all_equal(self, some_list):
+        return some_list.count(some_list[0]) == len(some_list)
+
+    def _evaluate_checkpoint(self, checkpoint_points):
         pix_arr = self.numpy_array
-        colored_dots = map(lambda point: IMAGE_HELPER.GetPixelColor(pix_arr, point[0], point[1]), 
-                           checkpoint_points)
-        pixel_means = np.mean(colored_dots, 1)
-        #print colored_dots
-        #cprint('Pixel means: %s' % pixel_means, 'cyan')
-        return any(val < 100 for val in pixel_means)
+        checkpoint_pixels = map(lambda point: IMAGE_HELPER.GetPixelColor(pix_arr, point[0], point[1]), 
+                                checkpoint_points)
+
+        #print(checkpoint_pixels)
+        
+        # If the first pixel is not a valid color, no need to check the other three
+        if not checkpoint_pixels[0] in self.HUD_PROGRESS_COLOR_VALUES:
+            return -1
+        # If the first pixel is good, make sure the other three match
+        elif not self.all_equal(checkpoint_pixels):
+            return -1
+        # If all are good, return the corresponding value
+        else:
+            return self.HUD_PROGRESS_COLOR_VALUES[checkpoint_pixels[0]]
 
     def _evaluate_end_state(self):
         #cprint('Evaluate End State called!','yellow')
         pix_arr = self.numpy_array
 
-        upper_left = IMAGE_HELPER.GetPixelColor(pix_arr, 19, 19)
-        upper_right = IMAGE_HELPER.GetPixelColor(pix_arr, 620, 19)
-        bottom_left = IMAGE_HELPER.GetPixelColor(pix_arr, 19, 460)
-        bottom_right = IMAGE_HELPER.GetPixelColor(pix_arr, 620, 460)
+        point_a = IMAGE_HELPER.GetPixelColor(pix_arr, 203, 51)
         
-        if upper_left == upper_right == bottom_left == bottom_right:
+        if point_a in self.LAP_COLOR_MAP:
             self.end_episode_confidence += 1
         else:
             self.end_episode_confidence = 0
-            
+
         if self.end_episode_confidence > self.END_EPISODE_THRESHOLD:
-            return True
+           return True
         else:
-            return False
+           return False
 
     def _navigate_menu(self):
         frame = 0
@@ -204,11 +263,12 @@ class MarioKartEnv(Mupen64PlusEnv):
                     action = ControllerState.JOYSTICK_DOWN
                     cur_row += 1
 
-            # Just as the course loads, change the HUD view
-            if frame in [263, 265]:
-                self.controller_server.send_controls(ControllerState.NO_OP, r_cbutton=1)
-                frame += 1
-                continue
+            if self.ENABLE_CHECKPOINTS:
+                # Just as the course loads, change the HUD view
+                if frame in [263, 265]:
+                    self.controller_server.send_controls(ControllerState.NO_OP, r_cbutton=1)
+                    frame += 1
+                    continue
 
             if action != ControllerState.NO_OP:
                 print('Frame ' + str(frame) + ': ' + str(action))
@@ -218,7 +278,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     def _navigate_post_race_menu(self):
         frame = 0
-        while frame < 138:
+        while frame < 323:
             action = ControllerState.NO_OP
 
             # Post race menu (previous choice selected by default)
@@ -229,10 +289,10 @@ class MarioKartEnv(Mupen64PlusEnv):
             # - Replay
             # - Save Ghost
 
-            #  60 - Times screen
-            #  75 - Post race menu
-            # 138 - <Level loaded; turn over control>
-            if frame in [60, 75]:
+            # 245 - Times screen
+            # 260 - Post race menu
+            # 323 - <Level loaded; turn over control>
+            if frame in [245, 260]:
                 action = ControllerState.A_BUTTON
 
             if action != ControllerState.NO_OP:
