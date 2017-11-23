@@ -24,7 +24,7 @@ class MarioKartDiscreteLuigiRacewayEnv(MarioKartLuigiRacewayEnv):
     def __init__(self):
         super(MarioKartDiscreteLuigiRacewayEnv, self).__init__()
 
-        self.action_space = spaces.Discrete(12)
+        self.action_space = spaces.Discrete(len(self.ACTION_MAP))
 
     def _step(self, action):
         controls = self.ACTION_MAP[action][1]
