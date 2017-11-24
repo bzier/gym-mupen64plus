@@ -23,45 +23,9 @@ class MarioKartEnv(Mupen64PlusEnv):
                                  (255, 255, 000): 2, # Yellow: Lap 2
                                  (255, 000, 000): 3} #    Red: Lap 3
 
-    # Sample 4 pixels for each checkpoint to reduce the
-    # likelihood of a pixel matching the color by chance
-    CHECKPOINT_LOCATIONS = [
-        #### Starting with the upper left corner and moving clockwise ####
-        [( 64,  36), ( 65,  36), ( 64,  37), ( 65,  37)],
-
-        #### Across the top ####
-        [(194,  36), (195,  36), (194,  37), (195,  37)],
-        [(324,  36), (325,  36), (324,  37), (325,  37)],
-        [(454,  36), (455,  36), (454,  37), (455,  37)],
-
-        #### Upper right corner ####
-        [(584,  36), (585,  36), (584,  37), (585,  37)],
-
-        #### Down the right side ####
-        [(584, 138), (585, 138), (584, 139), (585, 139)],
-        [(584, 240), (585, 240), (584, 241), (585, 241)],
-        [(584, 342), (585, 342), (584, 343), (585, 343)],
-
-        #### Lower right corner is empty; grab a chunk above it and to its left ####
-        [(584, 443), (585, 443), (583, 444), (583, 445)],
-
-        #### Across the bottom ####
-        [(454, 444), (455, 444), (454, 445), (455, 445)],
-        [(324, 444), (325, 444), (324, 445), (325, 445)],
-        [(194, 444), (195, 444), (194, 445), (195, 445)],
-
-        #### Lower left corner ####
-        [( 64, 444), ( 65, 444), ( 64, 445), ( 65, 445)],
-
-        #### Up the left side ####
-        [( 64, 342), ( 65, 342), ( 64, 343), ( 65, 343)],
-        [( 64, 240), ( 65, 240), ( 64, 241), ( 65, 241)],
-        [( 64, 138), ( 65, 138), ( 64, 139), ( 65, 139)],
-    ]
-
     DEFAULT_STEP_REWARD = -1
     LAP_REWARD = 100
-    CHECKPOINT_REWARD = 100
+    CHECKPOINT_REWARD = 1
     END_REWARD = 1000
 
     END_EPISODE_THRESHOLD = 30
@@ -85,6 +49,7 @@ class MarioKartEnv(Mupen64PlusEnv):
         self.lap = 1
 
         if self.ENABLE_CHECKPOINTS:
+            self.CHECKPOINT_LOCATIONS = list(self._generate_checkpoints(64, 36, 584, 444)) 
             self._checkpoint_tracker = [[False for i in range(len(self.CHECKPOINT_LOCATIONS))] for j in range(3)]
             self.last_known_ckpt = -1
         
@@ -118,12 +83,12 @@ class MarioKartEnv(Mupen64PlusEnv):
         else:
             if cur_lap > self.lap:
                 self.lap = cur_lap
-                cprint('Lap %s!' % self.lap, 'red')
+                cprint('Lap %s!' % self.lap, 'green')
                 return self.LAP_REWARD
 
             elif self.ENABLE_CHECKPOINTS and cur_ckpt > -1 and not self._checkpoint_tracker[self.lap - 1][cur_ckpt]:
                 self._checkpoint_tracker[self.lap - 1][cur_ckpt] = True
-                cprint('CHECKPOINT achieved!', 'red')
+                #cprint('CHECKPOINT achieved!', 'red')
                 return self.CHECKPOINT_REWARD
             
             else:
@@ -135,6 +100,38 @@ class MarioKartEnv(Mupen64PlusEnv):
 
         # If it is unknown, assume same lap (character icon is likely covering the corner)
         return ckpt_val if ckpt_val != -1 else self.lap
+
+    def _generate_checkpoints(self, min_x, min_y, max_x, max_y):
+        # TODO: I'm sure this can/should be more pythonic somehow
+
+        # Sample 4 pixels for each checkpoint to reduce the
+        # likelihood of a pixel matching the color by chance
+
+        # Top
+        for i in range((max_x - min_x) / 2):
+            x_val = min_x + i*2
+            y_val = min_y
+            yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
+
+        # Right-side
+        for i in range((max_y - min_y) / 2):
+            x_val = max_x
+            y_val = min_y + i*2
+            yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
+        
+        # Bottom
+        for i in range((max_x - min_x) / 2):
+            if i == 0: # Skip the bottom right corner (for some reason MK doesn't draw it)
+                continue
+            x_val = max_x - i*2
+            y_val = max_y
+            yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
+        
+        # Left-side
+        for i in range((max_y - min_y) / 2):
+            x_val = min_x
+            y_val = max_y - i*2
+            yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
 
     def _get_current_checkpoint(self):
         checkpoint_values = map(self._evaluate_checkpoint, self.CHECKPOINT_LOCATIONS)
