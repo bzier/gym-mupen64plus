@@ -17,5 +17,5 @@ dependencies:
   - numpy>=1.12.0
   - PyYAML>=3.12
   - termcolor>=1.1.0
-  - wx>=3.0.3
+  - mss>=3.0.1
 
