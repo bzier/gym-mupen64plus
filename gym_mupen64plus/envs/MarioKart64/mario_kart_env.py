@@ -23,9 +23,10 @@ class MarioKartEnv(Mupen64PlusEnv):
                                  (255, 255, 000): 2, # Yellow: Lap 2
                                  (255, 000, 000): 3} #    Red: Lap 3
 
-    DEFAULT_STEP_REWARD = -1
+    DEFAULT_STEP_REWARD = -0.5
     LAP_REWARD = 100
     CHECKPOINT_REWARD = 1
+    BACKWARDS_PUNISHMENT = -1
     END_REWARD = 1000
 
     END_EPISODE_THRESHOLD = 30
@@ -47,6 +48,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     def _reset(self):
         
         self.lap = 1
+        self.last_known_lap = -1
 
         if self.ENABLE_CHECKPOINTS:
             self.CHECKPOINT_LOCATIONS = list(self._generate_checkpoints(64, 36, 584, 444)) 
@@ -71,6 +73,7 @@ class MarioKartEnv(Mupen64PlusEnv):
         return super(MarioKartEnv, self)._reset()
 
     def _get_reward(self):
+        reward_to_return = 0
         cur_lap = self._get_lap()
 
         if self.ENABLE_CHECKPOINTS:
@@ -79,20 +82,37 @@ class MarioKartEnv(Mupen64PlusEnv):
         #cprint('Get Reward called!','yellow')
         if self.episode_over:
             # Refund the reward lost in the frames between the race finish and end episode detection
-            return self.END_DETECTION_REWARD_REFUND + self.END_REWARD
+            reward_to_return = self.END_DETECTION_REWARD_REFUND + self.END_REWARD
         else:
             if cur_lap > self.lap:
                 self.lap = cur_lap
                 cprint('Lap %s!' % self.lap, 'green')
-                return self.LAP_REWARD
+                reward_to_return = self.LAP_REWARD
 
-            elif self.ENABLE_CHECKPOINTS and cur_ckpt > -1 and not self._checkpoint_tracker[self.lap - 1][cur_ckpt]:
+            elif (self.ENABLE_CHECKPOINTS and cur_ckpt > -1 and
+                  not self._checkpoint_tracker[self.last_known_lap - 1][cur_ckpt]):
+
+                # TODO: Backwards across a lap boundary incorrectly grants a checkpoint reward
+                #       Need to investigate further. Might need to restore check for sequential checkpoints
+
+                #cprint(str(self.step_count) + ': CHECKPOINT achieved!', 'green')
                 self._checkpoint_tracker[self.lap - 1][cur_ckpt] = True
-                #cprint('CHECKPOINT achieved!', 'red')
-                return self.CHECKPOINT_REWARD
-            
+                reward_to_return = self.CHECKPOINT_REWARD
+
+            elif (self.ENABLE_CHECKPOINTS and ( cur_lap < self.last_known_lap or
+                                               cur_ckpt < self.last_known_ckpt)):
+                
+                #cprint(str(self.step_count) + ': BACKWARDS!!', 'red')
+                self._checkpoint_tracker[self.lap - 1][self.last_known_ckpt] = False
+                reward_to_return = self.BACKWARDS_PUNISHMENT
+
             else:
-                return self.DEFAULT_STEP_REWARD
+                reward_to_return = self.DEFAULT_STEP_REWARD
+
+        if self.ENABLE_CHECKPOINTS:
+            self.last_known_ckpt = cur_ckpt
+        self.last_known_lap = cur_lap
+        return reward_to_return
 
     def _get_lap(self):
         # The first checkpoint is the upper left corner. It's value should tell us the lap.
@@ -156,7 +176,6 @@ class MarioKartEnv(Mupen64PlusEnv):
             #    cprint('Checkpoints: %s' % checkpoint_values, 'yellow')
             #    cprint('Checkpoint: %s' % checkpoint, 'cyan')
 
-            self.last_known_ckpt = checkpoint
             return checkpoint
         else:
             # We haven't hit any checkpoint yet :(
