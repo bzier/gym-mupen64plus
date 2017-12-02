@@ -22,7 +22,7 @@ Please create issues as you encounter them. Future work and ideas will be captur
 * numpy
 * PyYAML
 * termcolor
-* wx
+* mss
 
 ### Additional Dependencies
 *These dependencies must be manually installed following these instructions.*
@@ -154,12 +154,13 @@ The core `Mupen64PlusEnv` class has been built to handle many of the details of 
 * starts the emulator process with the provided ROM path (this also uses values from the config file)
 * sets up the observation and action spaces (see the [gym documentation](https://gym.openai.com/docs))
     * the observation space is the screen pixels, by default [640, 480, 3]
-    * the action spaace is the controller mapping provided by `mupen64plus-input-bot`
+    * the default action space is the controller mapping provided by `mupen64plus-input-bot`
         * Joystick X-axis (L/R): value from -80 to 80
         * Joystick Y-axis (U/D): value from -80 to 80
         * A Button: value of 0 or 1
         * B Button: value of 0 or 1
         * RB Button: value of 0 or 1
+    * *Note:* certain game environments may choose to override this default action space to provide options more suited for the specific game (details should be noted in the respective game's README)
 
 #### Methods:
 * `_step(action)` handles taking the supplied action, passing it to the controller server, and reading the new `observation`, `reward`, and `end_episode` values.

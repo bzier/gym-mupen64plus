@@ -17,17 +17,17 @@ from gym.utils import seeding
 
 import numpy as np
 
-import wx
+import mss
 
 
 ###############################################
 class ImageHelper:
 
     def GetPixelColor(self, image_array, x, y):
-        base_pixel = (x + (y * config['SCR_W'])) * 3
-        red = image_array[base_pixel + 0]
-        green = image_array[base_pixel + 1]
-        blue = image_array[base_pixel + 2]
+        base_pixel = image_array[y][x]
+        red = base_pixel[0]
+        green = base_pixel[1]
+        blue = base_pixel[2]
         return (red, green, blue)
 
 
@@ -49,16 +49,12 @@ class Mupen64PlusEnv(gym.Env):
 
     def __init__(self, rom_name):
         self.viewer = None
-        self.screen = None
         self.reset_count = 0
         self.step_count = 0
         self.running = True
-        self.app = None
+        self.mss_grabber = None
         self.episode_over = False
         self.numpy_array = None
-        self.pixel_array = array.array('B', [0] * (config['SCR_W'] *
-                                                   config['SCR_H'] *
-                                                   config['SCR_D']))
         self.controller_server, self.controller_server_thread = self._start_controller_server()
         self.xvfb_process, self.emulator_process = self._start_emulator(rom_name=rom_name)
         self._navigate_menu()
@@ -92,16 +88,16 @@ class Mupen64PlusEnv(gym.Env):
             offset_x = config['OFFSET_X']
             offset_y = config['OFFSET_Y']
 
-        bmp = wx.Bitmap(config['SCR_W'], config['SCR_H'])
-        wx.MemoryDC(bmp).Blit(0, 0,
-                              config['SCR_W'], config['SCR_H'],
-                              self.screen,
-                              offset_x, offset_y)
-        bmp.CopyToBuffer(self.pixel_array)
+        image_array = \
+            np.array(self.mss_grabber.grab({"top": offset_y,
+                                            "left": offset_x,
+                                            "width": config['SCR_W'],
+                                            "height": config['SCR_H']}),
+                     dtype=np.uint8)
 
-        self.numpy_array = np.frombuffer(self.pixel_array, dtype=np.uint8)
+        # drop the alpha channel and flip red and blue channels (BGRA -> RGB)
         self.numpy_array = \
-            self.numpy_array.reshape(config['SCR_H'], config['SCR_W'], config['SCR_D'])
+            np.flip(image_array[:, :, :3], 2)
 
         return self.numpy_array
 
@@ -188,6 +184,7 @@ class Mupen64PlusEnv(gym.Env):
         cmd = [config['MUPEN_CMD'],
                "--resolution",
                "%ix%i" % (res_w, res_h),
+               "--audio", "dummy",
                "--input",
                input_driver_path,
                rom_path]
@@ -224,13 +221,14 @@ class Mupen64PlusEnv(gym.Env):
                                             shell=False,
                                             stderr=subprocess.STDOUT)
 
-        # Need to initialize this after the DISPLAY env var has been set
-        # so it attaches to the correct X display; otherwise screenshots
-        # come from the wrong place.
-        cprint('Calling wx.App() with DISPLAY: %s' % os.environ["DISPLAY"], 'red')
-        self.app = wx.App()
-        self.screen = wx.ScreenDC()
-        time.sleep(2) # Give wx a couple seconds to start up
+        # TODO: Test and cleanup:
+        # May need to initialize this after the DISPLAY env var has been set
+        # so it attaches to the correct X display; otherwise screenshots may
+        # come from the wrong place. This used to be true when we were using
+        # wxPython for screenshots. Untested after switching to mss.
+        cprint('Calling mss.mss() with DISPLAY: %s' % os.environ["DISPLAY"], 'red')
+        self.mss_grabber = mss.mss()
+        time.sleep(2) # Give mss a couple seconds to initialize; also may not be necessary
 
         # Restore the DISPLAY env var
         os.environ["DISPLAY"] = initial_disp

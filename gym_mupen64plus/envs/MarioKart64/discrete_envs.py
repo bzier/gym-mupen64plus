@@ -19,14 +19,14 @@ class MarioKartDiscreteLuigiRacewayEnv(MarioKartLuigiRacewayEnv):
         ("EXTREME_RIGHT", [ 80,   0, 1, 0, 0]),
     ]
 
+    ENABLE_CHECKPOINTS = True
+
     def __init__(self):
         super(MarioKartDiscreteLuigiRacewayEnv, self).__init__()
 
         self.action_space = spaces.Discrete(12)
 
     def _step(self, action):
-        print('Step called with: ', action)
         controls = self.ACTION_MAP[action][1]
-        print('Using controls: ', controls)
 
         return super(MarioKartDiscreteLuigiRacewayEnv, self)._step(controls)
