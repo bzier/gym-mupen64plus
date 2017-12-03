@@ -190,27 +190,44 @@ class Mupen64PlusEnv(gym.Env):
                rom_path]
 
         initial_disp = os.environ["DISPLAY"]
-        cprint('initial_disp: %s' % initial_disp, 'red')
+        cprint('Initially on DISPLAY %s' % initial_disp, 'red')
 
         xvfb_proc = None
         if config['USE_XVFB']:
+            display_num = -1
+            success = False
+            # If we couldn't find an open display number after 15 attempts, give up
+            while not success and display_num <= 15:
+                display_num += 1
+                xvfb_cmd = [config['XVFB_CMD'],
+                            ":" + str(display_num),
+                            "-screen",
+                            "0",
+                            "%ix%ix%i" % (res_w, res_h, res_d * 8),
+                            "-fbdir",
+                            config['TMP_DIR']]
 
-            xvfb_cmd = [config['XVFB_CMD'],
-                        config['XVFB_DISPLAY'],
-                        "-screen",
-                        "0",
-                        "%ix%ix%i" % (res_w, res_h, res_d * 8),
-                        "-fbdir",
-                        config['TMP_DIR']]
+                cprint('Starting xvfb with command: %s' % xvfb_cmd, 'yellow')
 
-            cprint('Starting xvfb with command: %s' % xvfb_cmd, 'yellow')
+                xvfb_proc = subprocess.Popen(xvfb_cmd, shell=False, stderr=subprocess.STDOUT)
 
-            xvfb_proc = subprocess.Popen(xvfb_cmd, shell=False, stderr=subprocess.STDOUT)
+                time.sleep(2) # Give xvfb a couple seconds to start up
 
-            time.sleep(2) # Give xvfb a couple seconds to start up
+                # Poll the process to see if it exited early
+                # (most likely due to a server already active on the display_num)
+                if xvfb_proc.poll() is None:
+                    success = True
+                
+                print('')
 
-            os.environ["DISPLAY"] = config['XVFB_DISPLAY']
-            cprint('Changed DISPLAY to: %s' % os.environ["DISPLAY"], 'red')
+            if not success:
+                msg = "Failed to initialize Xvfb!"
+                cprint(msg, 'red')
+                raise Exception(msg)
+
+            os.environ["DISPLAY"] = ":" + str(display_num)
+            cprint('Using DISPLAY %s' % os.environ["DISPLAY"], 'blue')
+            cprint('Changed to DISPLAY %s' % os.environ["DISPLAY"], 'red')
 
             cmd = [config['VGLRUN_CMD']] + cmd
 
@@ -226,13 +243,13 @@ class Mupen64PlusEnv(gym.Env):
         # so it attaches to the correct X display; otherwise screenshots may
         # come from the wrong place. This used to be true when we were using
         # wxPython for screenshots. Untested after switching to mss.
-        cprint('Calling mss.mss() with DISPLAY: %s' % os.environ["DISPLAY"], 'red')
+        cprint('Calling mss.mss() with DISPLAY %s' % os.environ["DISPLAY"], 'red')
         self.mss_grabber = mss.mss()
         time.sleep(2) # Give mss a couple seconds to initialize; also may not be necessary
 
         # Restore the DISPLAY env var
         os.environ["DISPLAY"] = initial_disp
-        cprint('Changed DISPLAY to: %s' % os.environ["DISPLAY"], 'red')
+        cprint('Changed back to DISPLAY %s' % os.environ["DISPLAY"], 'red')
 
         emu_mon = EmulatorMonitor()
         monitor_thread = threading.Thread(target=emu_mon.monitor_emulator,
