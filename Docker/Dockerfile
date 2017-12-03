@@ -57,9 +57,7 @@ RUN git clone https://github.com/mupen64plus/mupen64plus-core && \
 WORKDIR /src
 RUN git clone https://github.com/bzier/gym-mupen64plus/ && \
         cd gym-mupen64plus && \
-        git reset --hard a94e1a13a12b8cc3e27d16737cb46197adb35b8c && \
-    # TODO: Temporary until this is updated in the repo
-    sed -i -- 's/wx>=3.0.3/wxPython==4.0.0a1/g' ./setup.py && \
+        git reset --hard ff2f2b28eaa086c7310fee085c6950386656ece6 && \
     # TODO: Changing from DISPLAY :1 to :0... maybe handle this differently (spin up a :0 just for nothing, and then use :1)
     sed -i -- 's/XVFB_DISPLAY: :1/XVFB_DISPLAY: :0/g' ./gym_mupen64plus/envs/config.yml && \
     # Install requirements & this package
