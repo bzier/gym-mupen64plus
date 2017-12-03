@@ -94,10 +94,12 @@ The environment is currently configured to use [XVFB](https://www.x.org/archive/
 Since the emulator runs off-screen, the environment provides a `render()` call which displays a window with the screen pixels. Each call to `render()` will update this display. For example, an agent can make this call between each `step()`.
 
 ### Connecting to XVFB with VNC
-When calling `reset()`, the environment handles navigating menus and getting the game ready for the next episode. This is a blocking call, so `render()` will not show what is happening in-between. An alternative view into the XVFB display is using VNC. You can connect a VNC server to the XVFB display using the following command (where `:1` matches the configured `XVFB_DISPLAY` value in `config.yml`):
+When calling `reset()`, the environment handles navigating menus and getting the game ready for the next episode. This is a blocking call, so `render()` will not show what is happening in-between. An alternative view into the XVFB display is using VNC. You can connect a VNC server to the XVFB display using the following command:
 ```bash
 x11vnc -display :1 -localhost -forever -viewonly &
 ```
+*(where `:1` matches the chosen display number; the startup output will show "`Using DISPLAY :1`" in blue)*
+
 Then you can use your favorite VNC client to connect to `localhost` to watch the XVFB display in real-time. Note that running the VNC server and client can cause some performance overhead.
 
 ### Running without XVFB
