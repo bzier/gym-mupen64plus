@@ -18,7 +18,6 @@ OFFSET_Y: 240
 # XVFB config:
 USE_XVFB: true
 XVFB_CMD: Xvfb
-XVFB_DISPLAY: :1
 TMP_DIR: /dev/shm
 VGLRUN_CMD: vglrun
 
