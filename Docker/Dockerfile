@@ -58,8 +58,6 @@ WORKDIR /src
 RUN git clone https://github.com/bzier/gym-mupen64plus/ && \
         cd gym-mupen64plus && \
         git reset --hard ff2f2b28eaa086c7310fee085c6950386656ece6 && \
-    # TODO: Changing from DISPLAY :1 to :0... maybe handle this differently (spin up a :0 just for nothing, and then use :1)
-    sed -i -- 's/XVFB_DISPLAY: :1/XVFB_DISPLAY: :0/g' ./gym_mupen64plus/envs/config.yml && \
     # Install requirements & this package
     pip install -e .
 
