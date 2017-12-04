@@ -23,9 +23,9 @@ class MarioKartEnv(Mupen64PlusEnv):
                                  (255, 255, 000): 2, # Yellow: Lap 2
                                  (255, 000, 000): 3} #    Red: Lap 3
 
-    DEFAULT_STEP_REWARD = -0.5
+    DEFAULT_STEP_REWARD = -0.1
     LAP_REWARD = 100
-    CHECKPOINT_REWARD = 1
+    CHECKPOINT_REWARD = 0.5
     BACKWARDS_PUNISHMENT = -1
     END_REWARD = 1000
 
