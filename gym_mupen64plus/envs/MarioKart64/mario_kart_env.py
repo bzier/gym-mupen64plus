@@ -58,6 +58,9 @@ class MarioKartEnv(Mupen64PlusEnv):
         # Nothing to do on the first call to reset()
         if self.reset_count > 0:
 
+            # Make sure we don't skip frames while navigating the menus
+            self.controller_server.frame_skip = 0
+
             if self.episode_over:
                 self._navigate_post_race_menu()
                 self.episode_over = False

@@ -121,6 +121,8 @@ class Mupen64PlusEnv(gym.Env):
         self.reset_count += 1
 
         self.step_count = 0
+        # TODO: Config or environment argument
+        self.controller_server.frame_skip = 5
         return self._observe()
 
     def _render(self, mode='human', close=False):
@@ -319,11 +321,14 @@ class ControllerHTTPServer(HTTPServer, object):
         self.controls = ControllerState()
         self.hold_response = True
         self.running = True
+        self.send_count = 0
+        self.frame_skip = 0
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
     # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
     def send_controls(self, controls, start_button=0, r_cbutton=0):
         #print('Send controls called')
+        self.send_count = 0
         self.controls = ControllerState(controls, start_button, r_cbutton)
         self.hold_response = False
 
@@ -339,7 +344,7 @@ class ControllerHTTPServer(HTTPServer, object):
 
     class ControllerRequestHandler(BaseHTTPRequestHandler, object):
 
-        def log_message(self, format, *args):
+        def log_message(self, fmt, *args):
             pass
 
         def write_response(self, resp_code, resp_data):
@@ -361,8 +366,11 @@ class ControllerHTTPServer(HTTPServer, object):
 
             ### respond with controller output
             self.write_response(200, self.server.controls.to_json())
+            self.server.send_count += 1
 
-            self.server.hold_response = True
+            # If we have send the controls 'n' times, now we block until the next action is sent
+            if self.server.send_count >= self.server.frame_skip:
+                self.server.hold_response = True
             return
 
 ###############################################

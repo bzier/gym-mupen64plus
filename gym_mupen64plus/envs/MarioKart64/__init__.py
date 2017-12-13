@@ -209,7 +209,7 @@ register(
     tags={
         'mupen': True,
         'cup': 'Mushroom',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
+        'wrapper_config.TimeLimit.max_episode_steps': 1000,
     },
     nondeterministic=True,
 )
