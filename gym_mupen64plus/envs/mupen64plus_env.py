@@ -1,5 +1,4 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
-#from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 import abc
 import array
@@ -346,7 +345,7 @@ class ControllerHTTPServer(HTTPServer, object):
             self.send_response(resp_code)
             self.send_header("Content-type", "text/plain")
             self.end_headers()
-            self.wfile.write(resp_data.encode("utf-8"))
+            self.wfile.write(resp_data)
 
         def do_GET(self):
 
