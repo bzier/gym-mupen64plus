@@ -70,13 +70,21 @@ class Mupen64PlusEnv(gym.Env):
 
     def _step(self, action):
         #cprint('Step %i: %s' % (self.step_count, action), 'green')
-        self.controller_server.send_controls(action)
+        self._act(action)
         obs = self._observe()
         self.episode_over = self._evaluate_end_state()
         reward = self._get_reward()
 
         self.step_count += 1
         return obs, reward, self.episode_over, {}
+
+    def _act(self, action, count=1):
+        for i in range(count):
+            self.controller_server.send_controls(action)
+
+    def _press_button(self, button):
+        self._act(button) # Press
+        self._act(ControllerState.NO_OP) # and release
 
     def _observe(self):
         #cprint('Observe called!', 'yellow')
@@ -247,6 +255,8 @@ class Mupen64PlusEnv(gym.Env):
         self.mss_grabber = mss.mss()
         time.sleep(2) # Give mss a couple seconds to initialize; also may not be necessary
 
+        time.sleep(30) # TODO: Remove... added for testing (give time to connect with VNC client)
+
         # Restore the DISPLAY env var
         os.environ["DISPLAY"] = initial_disp
         cprint('Changed back to DISPLAY %s' % os.environ["DISPLAY"], 'red')
@@ -262,7 +272,7 @@ class Mupen64PlusEnv(gym.Env):
     def _kill_emulator(self):
         #cprint('Kill Emulator called!', 'yellow')
         try:
-            self.controller_server.send_controls(ControllerState.NO_OP)
+            self._act(ControllerState.NO_OP)
             if self.emulator_process is not None:
                 self.emulator_process.kill()
             if self.xvfb_process is not None:

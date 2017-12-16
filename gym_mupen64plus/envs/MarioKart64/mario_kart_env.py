@@ -49,16 +49,16 @@ class MarioKartEnv(Mupen64PlusEnv):
         if self.reset_count > 0:
 
             if self.episode_over:
+                self._act(ControllerState.NO_OP, count=59)
                 self._navigate_post_race_menu()
+                self._act(ControllerState.NO_OP, count=61) # Wait for race to load
                 self.episode_over = False
             else:
                 self.controller_server.send_controls(ControllerState.NO_OP, start_button=1)
-                self.controller_server.send_controls(ControllerState.NO_OP)
-                self.controller_server.send_controls(ControllerState.JOYSTICK_DOWN)
-                self.controller_server.send_controls(ControllerState.NO_OP)
-                self.controller_server.send_controls(ControllerState.A_BUTTON)
-                for i in range(77):
-                    self.controller_server.send_controls(ControllerState.NO_OP)
+                self._act(ControllerState.NO_OP)
+                self._press_button(ControllerState.JOYSTICK_DOWN)
+                self._press_button(ControllerState.A_BUTTON)
+                self._act(ControllerState.NO_OP, count=76) # Wait for race to load
 
 
         return super(MarioKartEnv, self)._reset()
@@ -147,92 +147,97 @@ class MarioKartEnv(Mupen64PlusEnv):
             return False
 
     def _navigate_menu(self):
-        frame = 0
+        self._act(ControllerState.NO_OP, count=10) # Wait for Nintendo screen
+        self._press_button(ControllerState.A_BUTTON)
+
+        self._act(ControllerState.NO_OP, count=68) # Wait for Mario Kart splash screen
+        self._press_button(ControllerState.A_BUTTON)
+
+        self._act(ControllerState.NO_OP, count=68) # Wait for Game Select screen
+        self._navigate_game_select()
+
+        self._act(ControllerState.NO_OP, count=14) # Wait for Player Select screen
+        self._navigate_player_select()
+
+        self._act(ControllerState.NO_OP, count=31) # Wait for Map Select screen
+        self._navigate_map_select()
+
+        self._act(ControllerState.NO_OP, count=50) # Wait for race to load
+
+    def _navigate_game_select(self):
+        # Select number of players (1 player highlighted by default)
+        self._press_button(ControllerState.A_BUTTON)
+        self._act(ControllerState.NO_OP, count=3) # Wait for animation
+
+        # Select GrandPrix or TimeTrials (GrandPrix highlighted by default - down to switch to TimeTrials)
+        self._press_button(ControllerState.JOYSTICK_DOWN)
+        self._act(ControllerState.NO_OP, count=3) # Wait for animation
+
+        # Select TimeTrials
+        self._press_button(ControllerState.A_BUTTON)
+
+        # Select Begin
+        self._press_button(ControllerState.A_BUTTON)
+
+        # Press OK
+        self._press_button(ControllerState.A_BUTTON)
+
+    def _navigate_player_select(self):
         cur_row = 0
         cur_col = 0
+        print('Player row: ' + str(self.PLAYER_ROW))
+        print('Player col: ' + str(self.PLAYER_COL))
 
-        while frame < 284:
-            action = ControllerState.NO_OP
+        if cur_row != self.PLAYER_ROW:
+            self._press_button(ControllerState.JOYSTICK_DOWN)
+            cur_row += 1
 
-            #  10 - Nintendo screen
-            #  80 - Mario Kart splash screen
-            # 120 - Select number of players
-            # 125 - Select GrandPrix or TimeTrials
-            # 130 - Select TimeTrials
-            # 132 - Select Begin
-            # 134 - OK
-            # 160 - Select player
-            # 162 - OK
-            # 202 - Select map series
-            # 230 - Select map choice
-            # 232 - OK
-            # 284 - <Level loaded; turn over control>
-            if frame in [10, 80, 120, 130, 132, 134, 160, 162, 202, 230, 232]:
-                action = ControllerState.A_BUTTON
-            elif frame in [125]:
-                action = ControllerState.JOYSTICK_DOWN
+        while cur_col != self.PLAYER_COL:
+            self._press_button(ControllerState.JOYSTICK_RIGHT)
+            cur_col += 1
 
-            # Frame 150 is the 'Player Select' screen
-            if frame == 150:
-                print('Player row: ' + str(self.PLAYER_ROW))
-                print('Player col: ' + str(self.PLAYER_COL))
+        # Select character
+        self._press_button(ControllerState.A_BUTTON)
 
-                if cur_row != self.PLAYER_ROW:
-                    action = ControllerState.JOYSTICK_DOWN
-                    cur_row += 1
+        # Press OK
+        self._press_button(ControllerState.A_BUTTON)
 
-            if frame in range(151, 156) and frame % 2 == 0:
-                if cur_col != self.PLAYER_COL:
-                    action = ControllerState.JOYSTICK_RIGHT
-                    cur_col += 1
+    def _navigate_map_select(self):
+        cur_row = 0
+        cur_col = 0
+        print('Map series: ' + str(self.MAP_SERIES))
+        print('Map choice: ' + str(self.MAP_CHOICE))
 
-            # Frame 195 is the 'Map Select' screen
-            if frame == 195:
-                cur_row = 0
-                cur_col = 0
-                print('Map series: ' + str(self.MAP_SERIES))
-                print('Map choice: ' + str(self.MAP_CHOICE))
+        # Select map series
+        while cur_col != self.MAP_SERIES:
+            self._press_button(ControllerState.JOYSTICK_RIGHT)
+            cur_col += 1
 
-            if frame in range(195, 202) and frame %2 == 0:
-                if cur_col != self.MAP_SERIES:
-                    action = ControllerState.JOYSTICK_RIGHT
-                    cur_col += 1
+        self._press_button(ControllerState.A_BUTTON)
 
-            if frame in range(223, 230) and frame %2 == 0:
-                if cur_row != self.MAP_CHOICE:
-                    action = ControllerState.JOYSTICK_DOWN
-                    cur_row += 1
+        # Select map choice
+        while cur_row != self.MAP_CHOICE:
+            self._press_button(ControllerState.JOYSTICK_DOWN)
+            cur_row += 1
 
-            if action != ControllerState.NO_OP:
-                print('Frame ' + str(frame) + ': ' + str(action))
+        self._press_button(ControllerState.A_BUTTON)
 
-            self.controller_server.send_controls(action)
-            frame += 1
+        # Press OK
+        self._press_button(ControllerState.A_BUTTON)
 
     def _navigate_post_race_menu(self):
-        frame = 0
-        while frame < 138:
-            action = ControllerState.NO_OP
+        # Post race menu (previous choice selected by default)
+        # - Retry
+        # - Course Change
+        # - Driver Change
+        # - Quit
+        # - Replay
+        # - Save Ghost
+        self._press_button(ControllerState.A_BUTTON)
+        self._act(ControllerState.NO_OP, count=13)
+        self._press_button(ControllerState.A_BUTTON)
+        
 
-            # Post race menu (previous choice selected by default)
-            # - Retry
-            # - Course Change
-            # - Driver Change
-            # - Quit
-            # - Replay
-            # - Save Ghost
-
-            #  60 - Times screen
-            #  75 - Post race menu
-            # 138 - <Level loaded; turn over control>
-            if frame in [60, 75]:
-                action = ControllerState.A_BUTTON
-
-            if action != ControllerState.NO_OP:
-                print('Frame ' + str(frame) + ': ' + str(action))
-
-            self.controller_server.send_controls(action)
-            frame += 1
 
     def _set_character(self, character):
         characters = {'mario'  : (0, 0),
