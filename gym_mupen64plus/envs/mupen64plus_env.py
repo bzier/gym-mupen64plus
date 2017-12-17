@@ -3,6 +3,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import abc
 import array
 import inspect
+import itertools
 import json
 import os
 import subprocess
@@ -79,7 +80,7 @@ class Mupen64PlusEnv(gym.Env):
         return obs, reward, self.episode_over, {}
 
     def _act(self, action, count=1):
-        for i in range(count):
+        for _ in itertools.repeat(None, count):
             self.controller_server.send_controls(action)
 
     def _press_button(self, button):
@@ -254,8 +255,6 @@ class Mupen64PlusEnv(gym.Env):
         cprint('Calling mss.mss() with DISPLAY %s' % os.environ["DISPLAY"], 'red')
         self.mss_grabber = mss.mss()
         time.sleep(2) # Give mss a couple seconds to initialize; also may not be necessary
-
-        time.sleep(30) # TODO: Remove... added for testing (give time to connect with VNC client)
 
         # Restore the DISPLAY env var
         os.environ["DISPLAY"] = initial_disp

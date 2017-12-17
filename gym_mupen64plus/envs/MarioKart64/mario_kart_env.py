@@ -1,5 +1,6 @@
 import abc
 import inspect
+import itertools
 import os
 import yaml
 from termcolor import cprint
@@ -51,7 +52,9 @@ class MarioKartEnv(Mupen64PlusEnv):
             if self.episode_over:
                 self._act(ControllerState.NO_OP, count=59)
                 self._navigate_post_race_menu()
-                self._act(ControllerState.NO_OP, count=61) # Wait for race to load
+                self._act(ControllerState.NO_OP, count=40) # Wait for the map select screen
+                self._navigate_map_select()
+                self._act(ControllerState.NO_OP, count=50) # Wait for race to load
                 self.episode_over = False
             else:
                 self.controller_server.send_controls(ControllerState.NO_OP, start_button=1)
@@ -212,20 +215,22 @@ class MarioKartEnv(Mupen64PlusEnv):
         while cur_col != self.MAP_SERIES:
             self._press_button(ControllerState.JOYSTICK_RIGHT)
             cur_col += 1
-
         self._press_button(ControllerState.A_BUTTON)
 
         # Select map choice
         while cur_row != self.MAP_CHOICE:
             self._press_button(ControllerState.JOYSTICK_DOWN)
             cur_row += 1
-
         self._press_button(ControllerState.A_BUTTON)
 
         # Press OK
         self._press_button(ControllerState.A_BUTTON)
 
     def _navigate_post_race_menu(self):
+        # Times screen
+        self._press_button(ControllerState.A_BUTTON)
+        self._act(ControllerState.NO_OP, count=13)
+
         # Post race menu (previous choice selected by default)
         # - Retry
         # - Course Change
@@ -233,11 +238,17 @@ class MarioKartEnv(Mupen64PlusEnv):
         # - Quit
         # - Replay
         # - Save Ghost
-        self._press_button(ControllerState.A_BUTTON)
-        self._act(ControllerState.NO_OP, count=13)
-        self._press_button(ControllerState.A_BUTTON)
-        
 
+        # Because the previous choice is selected by default, we navigate to the top entry so our
+        # navigation is consistent. The menu doesn't cycle top to bottom or bottom to top, so we can
+        # just make sure we're at the top by hitting up a few times
+        for _ in itertools.repeat(None, 5):
+            self._press_button(ControllerState.JOYSTICK_UP)
+
+        # Now we are sure to have the top entry selected
+        # Go down to 'course change'
+        self._press_button(ControllerState.JOYSTICK_DOWN)
+        self._press_button(ControllerState.A_BUTTON)
 
     def _set_character(self, character):
         characters = {'mario'  : (0, 0),
