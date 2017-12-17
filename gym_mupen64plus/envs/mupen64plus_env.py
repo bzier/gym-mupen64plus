@@ -195,7 +195,7 @@ class Mupen64PlusEnv(gym.Env):
 
         xvfb_proc = None
         if config['USE_XVFB']:
-            display_num = -1 #Displaynum hate
+            display_num = -1
             success = False
             # If we couldn't find an open display number after 15 attempts, give up
             while not success and display_num <= 15:
@@ -268,7 +268,7 @@ class Mupen64PlusEnv(gym.Env):
                 self.emulator_process.kill()
             if self.xvfb_process is not None:
                 os.killpg(os.getpgid(self.xvfb_process.pid),signal.SIGTERM)
-                #self.xvfb_process.kill()
+        
         except AttributeError:
             pass # We may be shut down during intialization before these attributes have been set
 
