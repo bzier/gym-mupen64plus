@@ -19,7 +19,6 @@ import numpy as np
 
 import mss
 
-
 ###############################################
 class ImageHelper:
 
@@ -266,7 +265,7 @@ class Mupen64PlusEnv(gym.Env):
             if self.emulator_process is not None:
                 self.emulator_process.kill()
             if self.xvfb_process is not None:
-                self.xvfb_process.kill()
+                self.xvfb_process.terminate()
         except AttributeError:
             pass # We may be shut down during intialization before these attributes have been set
 
