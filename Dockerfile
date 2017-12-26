@@ -52,15 +52,13 @@ RUN git clone https://github.com/mupen64plus/mupen64plus-core && \
     make install
 
 
-# clone the gym environment and install Python requirements
-# (explicitly specifying commit hash to attempt to guarantee behavior within this container)
-WORKDIR /src
-RUN git clone https://github.com/bzier/gym-mupen64plus/ && \
-        cd gym-mupen64plus && \
-        git reset --hard ff2f2b28eaa086c7310fee085c6950386656ece6 && \
-    # Install requirements & this package
-    pip install -e .
+# Copy the gym environment (current directory)
+COPY . /src/gym-mupen64plus
+WORKDIR /src/gym-mupen64plus
+# Install requirements & this package
+RUN pip install -e .
 
+WORKDIR /src
 
 # Declare ROMs as a volume for mounting a host path outside the container
 VOLUME /src/gym-mupen64plus/gym_mupen64plus/ROMs/
