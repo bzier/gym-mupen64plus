@@ -50,18 +50,18 @@ class MarioKartEnv(Mupen64PlusEnv):
         if self.reset_count > 0:
 
             if self.episode_over:
-                self._act(ControllerState.NO_OP, count=59)
+                self._wait(count=59)
                 self._navigate_post_race_menu()
-                self._act(ControllerState.NO_OP, count=40) # Wait for the map select screen
+                self._wait(count=40, wait_for='map select screen')
                 self._navigate_map_select()
-                self._act(ControllerState.NO_OP, count=50) # Wait for race to load
+                self._wait(count=50, wait_for='race to load')
                 self.episode_over = False
             else:
                 self.controller_server.send_controls(ControllerState.NO_OP, start_button=1)
                 self._act(ControllerState.NO_OP)
                 self._press_button(ControllerState.JOYSTICK_DOWN)
                 self._press_button(ControllerState.A_BUTTON)
-                self._act(ControllerState.NO_OP, count=76) # Wait for race to load
+                self._wait(count=76, wait_for='race to load')
 
 
         return super(MarioKartEnv, self)._reset()
@@ -150,31 +150,31 @@ class MarioKartEnv(Mupen64PlusEnv):
             return False
 
     def _navigate_menu(self):
-        self._act(ControllerState.NO_OP, count=10) # Wait for Nintendo screen
+        self._wait(count=10, wait_for='Nintendo screen')
         self._press_button(ControllerState.A_BUTTON)
 
-        self._act(ControllerState.NO_OP, count=68) # Wait for Mario Kart splash screen
+        self._wait(count=68, wait_for='Mario Kart splash screen')
         self._press_button(ControllerState.A_BUTTON)
 
-        self._act(ControllerState.NO_OP, count=68) # Wait for Game Select screen
+        self._wait(count=68, wait_for='Game Select screen')
         self._navigate_game_select()
 
-        self._act(ControllerState.NO_OP, count=14) # Wait for Player Select screen
+        self._wait(count=14, wait_for='Player Select screen')
         self._navigate_player_select()
 
-        self._act(ControllerState.NO_OP, count=31) # Wait for Map Select screen
+        self._wait(count=31, wait_for='Map Select screen')
         self._navigate_map_select()
 
-        self._act(ControllerState.NO_OP, count=50) # Wait for race to load
+        self._wait(count=50, wait_for='race to load')
 
     def _navigate_game_select(self):
         # Select number of players (1 player highlighted by default)
         self._press_button(ControllerState.A_BUTTON)
-        self._act(ControllerState.NO_OP, count=3) # Wait for animation
+        self._wait(count=3, wait_for='animation')
 
         # Select GrandPrix or TimeTrials (GrandPrix highlighted by default - down to switch to TimeTrials)
         self._press_button(ControllerState.JOYSTICK_DOWN)
-        self._act(ControllerState.NO_OP, count=3) # Wait for animation
+        self._wait(count=3, wait_for='animation')
 
         # Select TimeTrials
         self._press_button(ControllerState.A_BUTTON)
@@ -229,7 +229,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     def _navigate_post_race_menu(self):
         # Times screen
         self._press_button(ControllerState.A_BUTTON)
-        self._act(ControllerState.NO_OP, count=13)
+        self._wait(count=13)
 
         # Post race menu (previous choice selected by default)
         # - Retry

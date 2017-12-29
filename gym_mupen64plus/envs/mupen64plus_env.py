@@ -83,6 +83,9 @@ class Mupen64PlusEnv(gym.Env):
         for _ in itertools.repeat(None, count):
             self.controller_server.send_controls(action)
 
+    def _wait(self, count=1, wait_for='Unknown'):
+        self._act(ControllerState.NO_OP, count=count)
+
     def _press_button(self, button):
         self._act(button) # Press
         self._act(ControllerState.NO_OP) # and release
