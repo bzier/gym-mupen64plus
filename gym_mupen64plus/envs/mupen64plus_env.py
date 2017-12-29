@@ -184,6 +184,7 @@ class Mupen64PlusEnv(gym.Env):
             raise Exception(msg)
 
         cmd = [config['MUPEN_CMD'],
+               "--nospeedlimit",
                "--resolution",
                "%ix%i" % (res_w, res_h),
                "--audio", "dummy",
@@ -219,7 +220,7 @@ class Mupen64PlusEnv(gym.Env):
                 # (most likely due to a server already active on the display_num)
                 if xvfb_proc.poll() is None:
                     success = True
-                
+
                 print('')
 
             if not success:
@@ -231,7 +232,7 @@ class Mupen64PlusEnv(gym.Env):
             cprint('Using DISPLAY %s' % os.environ["DISPLAY"], 'blue')
             cprint('Changed to DISPLAY %s' % os.environ["DISPLAY"], 'red')
 
-            cmd = [config['VGLRUN_CMD']] + cmd
+            cmd = [config['VGLRUN_CMD'], "-d", ":" + str(display_num)] + cmd
 
         cprint('Starting emulator with comand: %s' % cmd, 'yellow')
 
