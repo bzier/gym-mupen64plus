@@ -3,6 +3,7 @@ from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartLuigiRacewayEnv
 from gym import spaces
 
 class DiscreteActions:
+    # TODO: make this a dictionary so we can reference by index or string label
     ACTION_MAP = [
         ("NO_OP",         [  0,   0, 0, 0, 0]),
         ("STRAIGHT",      [  0,   0, 1, 0, 0]),
@@ -34,7 +35,7 @@ class MarioKartDiscreteLuigiRacewayEnv(MarioKartLuigiRacewayEnv):
     def __init__(self):
         super(MarioKartDiscreteLuigiRacewayEnv, self).__init__()
 
-        # This needs to happen after the parent class init so we can effectively override the action space
+        # This needs to happen after the parent class init to effectively override the action space
         self.action_space = DiscreteActions.get_action_space()
 
     def _step(self, action):
