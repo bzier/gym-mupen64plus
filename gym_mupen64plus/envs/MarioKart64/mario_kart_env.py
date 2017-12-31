@@ -31,7 +31,6 @@ class MarioKartEnv(Mupen64PlusEnv):
     END_REWARD = 1000
 
     END_EPISODE_THRESHOLD = 30
-    END_DETECTION_REWARD_REFUND = END_EPISODE_THRESHOLD - 1
 
     PLAYER_ROW = 0
     PLAYER_COL = 0
@@ -49,6 +48,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     def _reset(self):
         
         self.lap = 1
+        self.step_count_at_lap = 0
         self.last_known_lap = -1
 
         if self.ENABLE_CHECKPOINTS:
@@ -80,21 +80,26 @@ class MarioKartEnv(Mupen64PlusEnv):
         return super(MarioKartEnv, self)._reset()
 
     def _get_reward(self):
+        #cprint('Get Reward called!','yellow')
+
         reward_to_return = 0
         cur_lap = self._get_lap()
 
         if self.ENABLE_CHECKPOINTS:
             cur_ckpt = self._get_current_checkpoint()
 
-        #cprint('Get Reward called!','yellow')
         if self.episode_over:
-            # Refund the reward lost in the frames between the race finish and end episode detection
-            reward_to_return = self.END_DETECTION_REWARD_REFUND + self.END_REWARD
+            # Scale out the end reward based on the total steps to get here; the fewer steps, the higher the reward
+            reward_to_return = self.END_REWARD * (5000 / self.step_count) - 3000
         else:
             if cur_lap > self.lap:
                 self.lap = cur_lap
                 cprint('Lap %s!' % self.lap, 'green')
-                reward_to_return = self.LAP_REWARD
+
+                # Scale out the lap reward based on the steps to get here; the fewer steps, the higher the reward
+                steps_this_lap = self.step_count - self.step_count_at_lap
+                reward_to_return = self.LAP_REWARD # TODO: Figure out a good scale here... number of steps required per lap will vary depending on the course; don't want negative reward for completing a lap
+                self.step_count_at_lap = self.step_count
 
             elif (self.ENABLE_CHECKPOINTS and cur_ckpt > -1 and
                   not self._checkpoint_tracker[self.last_known_lap - 1][cur_ckpt]):
