@@ -30,7 +30,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     BACKWARDS_PUNISHMENT = -1
     END_REWARD = 1000
 
-    END_EPISODE_THRESHOLD = 30
+    END_EPISODE_THRESHOLD = 0
 
     PLAYER_ROW = 0
     PLAYER_COL = 0
@@ -60,10 +60,11 @@ class MarioKartEnv(Mupen64PlusEnv):
         if self.reset_count > 0:
 
             # Make sure we don't skip frames while navigating the menus
+            frame_skip = self.controller_server.frame_skip
             self.controller_server.frame_skip = 0
 
             if self.episode_over:
-                self._wait(count=125)
+                self._wait(count=275)
                 self._navigate_post_race_menu()
                 self._wait(count=40, wait_for='map select screen')
                 self._navigate_map_select()
@@ -71,11 +72,18 @@ class MarioKartEnv(Mupen64PlusEnv):
                 self.episode_over = False
                 self.end_episode_confidence = 0
             else:
+                # Can't pause the race until the light turns green
+                if (self.step_count * frame_skip) < 120:
+                    steps_to_wait = 100 - (self.step_count * frame_skip)
+                    self._wait(count=steps_to_wait, wait_for='green light so we can pause')
                 self.controller_server.send_controls(ControllerState.NO_OP, start_button=1)
                 self._act(ControllerState.NO_OP)
                 self._press_button(ControllerState.JOYSTICK_DOWN)
                 self._press_button(ControllerState.A_BUTTON)
                 self._wait(count=76, wait_for='race to load')
+
+            # Put things back the way we found them
+            self.controller_server.frame_skip = frame_skip
 
         return super(MarioKartEnv, self)._reset()
 
