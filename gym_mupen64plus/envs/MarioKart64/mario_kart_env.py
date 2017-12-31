@@ -117,7 +117,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
                 #cprint(str(self.step_count) + ': CHECKPOINT achieved!', 'green')
                 self._checkpoint_tracker[self.lap - 1][cur_ckpt] = True
-                reward_to_return = self.CHECKPOINT_REWARD
+                reward_to_return = self.CHECKPOINT_REWARD # TODO: This should reward per progress made. It seems as though currently, by going too fast, you could end up skipping over some progress rewards, which would encourage driving around a bit to achieve those rewards. Should reward whatever progress was achieved during the step (perhaps multiple 'checkpoints')
 
             elif (self.ENABLE_CHECKPOINTS and ( cur_lap < self.last_known_lap or
                                                cur_ckpt < self.last_known_ckpt)):
