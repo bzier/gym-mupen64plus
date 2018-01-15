@@ -98,7 +98,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
         if self.episode_over:
             # Scale out the end reward based on the total steps to get here; the fewer steps, the higher the reward
-            reward_to_return = self.END_REWARD * (5000 / self.step_count) - 3000
+            reward_to_return = 5 * (1250 - self.step_count) + self.END_REWARD #self.END_REWARD * (5000 / self.step_count) - 3000
         else:
             if cur_lap > self.lap:
                 self.lap = cur_lap
