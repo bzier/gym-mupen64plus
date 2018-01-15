@@ -345,8 +345,8 @@ class ControllerHTTPServer(HTTPServer, object):
         self.hold_response = False
 
         # Wait for controls to be sent:
-        start = time.time()
-        while not self.hold_response and time.time() < start + self.control_timeout:
+        #start = time.time()
+        while not self.hold_response: # and time.time() < start + self.control_timeout:
             time.sleep(MILLISECOND)
 
     def shutdown(self):
