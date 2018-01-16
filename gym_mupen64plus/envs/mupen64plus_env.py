@@ -166,7 +166,7 @@ class Mupen64PlusEnv(gym.Env):
 
     def _stop_controller_server(self):
         #cprint('Stop Controller Server called!', 'yellow')
-        if self.controller_server is not None:
+        if hasattr(self, 'controller_server'):
             self.controller_server.shutdown()
 
     def _start_emulator(self,
