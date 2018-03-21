@@ -260,8 +260,7 @@ class MarioKartEnv(Mupen64PlusEnv):
         self._wait(count=46, wait_for='race to load')
         
         # Change HUD View twice to get to the one we want:
-        self._change_hud_view()
-        self._change_hud_view()
+        self._cycle_hud_view(times=2)
 
     def _navigate_game_select(self):
         # Select number of players (1 player highlighted by default)
@@ -322,9 +321,10 @@ class MarioKartEnv(Mupen64PlusEnv):
         # Press OK
         self._press_button(ControllerState.A_BUTTON)
 
-    def _change_hud_view(self):
-        self.controller_server.send_controls(ControllerState.NO_OP, r_cbutton=1)
-        self._act(ControllerState.NO_OP)
+    def _cycle_hud_view(self, times=1):
+        for _ in itertools.repeat(None, times):
+            self.controller_server.send_controls(ControllerState.NO_OP, r_cbutton=1)
+            self._act(ControllerState.NO_OP)
 
     def _navigate_post_race_menu(self):
         # Times screen
