@@ -34,7 +34,7 @@ class MarioKartDiscreteLuigiRacewayEnv(MarioKartLuigiRacewayEnv):
     def __init__(self):
         super(MarioKartDiscreteLuigiRacewayEnv, self).__init__()
 
-        # This needs to happen after the parent class init so we can effectively override the action space
+        # This needs to happen after the parent class init to effectively override the action space
         self.action_space = DiscreteActions.get_action_space()
 
     def _step(self, action):
