@@ -3,7 +3,6 @@ from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartLuigiRacewayEnv
 from gym import spaces
 
 class DiscreteActions:
-    # TODO: make this a dictionary so we can reference by index or string label
     ACTION_MAP = [
         ("NO_OP",         [  0,   0, 0, 0, 0]),
         ("STRAIGHT",      [  0,   0, 1, 0, 0]),
