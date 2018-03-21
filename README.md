@@ -12,104 +12,51 @@ Many of the core concepts for this wrapper were borrowed/adapted directly from [
 
 Please create issues as you encounter them. Future work and ideas will be captured as issues as well, so if you have any ideas of things you'd like to see, please add them. Also, feel free to fork this repository and improve upon it. If you come up with something you'd like to see incorporated, submit a pull request. Adding support for additional games would be a great place to start. If you do decide to implement support for a game, please create an issue mentioning what game you are working on. This will help organize the project and prevent duplicate work.
 
-
 ## Setup
 
-### Python Dependencies
-*If you follow the installation steps below, these dependencies will be resolved automatically.*
-* Python 2.7
-* gym
-* numpy
-* PyYAML
-* termcolor
-* mss
+The easiest, cleanest, most consistent way to get up and running with this project is via [`Docker`](https://docs.docker.com/). These instructions will focus on that approach.
 
-### Additional Dependencies
-*These dependencies must be manually installed following these instructions.*
-* Mupen64Plus
-    ```bash
-    #!/bin/bash
-    sudo apt-get install mupen64plus
+### With Docker
+
+1. Run the following command to build the project's docker image
+
+    > You should substitute the placeholders between `< >` with your own values.
+
+    ```sh
+    docker build -t <image_name>:<tag> .
+    ```
+    ```sh
+    # Example:
+    docker build -t bz/gym-mupen64plus:0.0.5 .
     ```
 
-* mupen64plus-input-bot
-    ```bash
-    #!/bin/bash
-    mkdir mupen64plus-src && cd "$_"
-    git clone https://github.com/mupen64plus/mupen64plus-core
-    git clone https://github.com/kevinhughes27/mupen64plus-input-bot
-    cd mupen64plus-input-bot
-    make all
-    sudo make install
-    ```
+    ### That's it!
 
-* One or more N64 ROMs (see the [Games](#games) section below)
+    ...wait... that's it??
+    
+    Yup... Ah, the beauty of Docker.
 
-### Installation
-
-Setting up the dependencies can be accomplished in many different ways. Two methods are provided here:
-
-#### Method #1: Directly installing via `pip`:
-To simply install the necessary dependencies into your system, use the following commands.
-
-*Note that this may upgrade/replace existing packages you may already have installed.*
-
-```bash
-#!/bin/bash
-cd gym-mupen64plus
-
-# Install the gym-mupen64plus package (and dependencies)
-pip install -e .
-```
-
-#### Method #2: Installing in a [conda environment](http://conda.pydata.org/docs/using/envs.html):
-To minimize disruption to your system and to prevent version conflicts with libraries you may already have installed, you can set up a conda environment with the following commands.
-
-```bash
-#!/bin/bash
-cd gym-mupen64plus
-
-# Create the conda environment with all the necessary requirements
-conda env create -f environment.yml
-
-# Activate the new environment
-source activate gym-mupen64plus
-
-# Install the gym-mupen64plus package in the new environment
-pip install -e .
-```
-
-### Configuration
-
-A configuration file ([`config.yml`](gym_mupen64plus/envs/config.yml)) has been provided for the core wrapper where the primary settings are stored. This configuration may vary on your system, so please take a look at the available settings and adjust as necessary.
-
-Additionally, each game environment may specify configuration values which will be stored in a separate config file in the game's specific subdirectory (see each game's README for those details).
-
-
-## XVFB
-
-The environment is currently configured to use [XVFB](https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml) by default. This allows the emulator to run behind-the-scenes and simplifies configuration. The config file includes a flag to turn this behavior on/off (see below for details running with the flag turned off). 
-
-### Viewing the emulator in XVFB
-Since the emulator runs off-screen, the environment provides a `render()` call which displays a window with the screen pixels. Each call to `render()` will update this display. For example, an agent can make this call between each `step()`.
-
-### Connecting to XVFB with VNC
-When calling `reset()`, the environment handles navigating menus and getting the game ready for the next episode. This is a blocking call, so `render()` will not show what is happening in-between. An alternative view into the XVFB display is using VNC. You can connect a VNC server to the XVFB display using the following command:
-```bash
-x11vnc -display :1 -localhost -forever -viewonly &
-```
-*(where `:1` matches the chosen display number; the startup output will show "`Using DISPLAY :1`" in blue)*
-
-Then you can use your favorite VNC client to connect to `localhost` to watch the XVFB display in real-time. Note that running the VNC server and client can cause some performance overhead.
-
-### Running without XVFB
-If XVFB is turned off, the emulator will run in your default X display manager. As a result, the display manager positions the emulator window (we have no control over where the window is positioned). This means that you will need to configure the offset values to ensure we are capturing the correct portion of the screen. Additionally, it means the emulator must remain the top-most window for the entirety of the session. Otherwise, the AI agent will see whatever is on-screen rather than the emulator window.
-
+### Without Docker
+* :(
+  > It is possible to run without Docker, but there isn't a compelling reason to and it just introduces a significant amount of setup work and potential complications.
+  >
+  > **`Fair warning:`** I likely will ***not*** be testing manual setup or maintaining its documentation going forward so it may become stale over time.
+  >
+  > However, if you really do want to, here are the [old instructions](docs/manual_setup.md).
 
 ## Example Agents
 
 ### Simple Test:
 A simple example to test if the environment is up-and-running:
+```
+docker run -it \
+  --name test-gym-env \
+  -p 5900 \
+  --mount source="$(MY_ROM_PATH)",target=/src/gym-mupen64plus/gym_mupen64plus/ROMs,type=bind \
+  bz/gym-mupen64plus:0.0.5 \ # This should match the image & tag you used during setup
+  python verifyEnv.py
+```
+
 ```python
 #!/bin/python
 import gym, gym_mupen64plus
@@ -131,8 +78,12 @@ raw_input("Press <enter> to exit... ")
 env.close()
 ```
 
-### AI Agent:
-The original inspiration for this project has now been updated to take advantage of this gym environment. It is an example of using supervised learning (hopefully soon adding reinforcement learning) to train an AI Agent that is capable of interacting with the environment. It utilizes the TensorFlow library for its machine learning. Check out TensorKart [here](https://github.com/kevinhughes27/TensorKart).
+### AI Agent (supervised learning):
+The original inspiration for this project has now been updated to take advantage of this gym environment. It is an example of using supervised learning to train an AI Agent that is capable of interacting with the environment (Mario Kart). It utilizes the TensorFlow library for its machine learning. Check out TensorKart [here](https://github.com/kevinhughes27/TensorKart).
+
+
+### AI Agent (reinforcement learning):
+An adaptation of the A3C algorithm has been applied to this environment (Mario Kart) and is capable of training from scratch (zero knowledge) to successfully finish races. Check out that agent [here](https://github.com/bzier/universe-starter-agent/tree/mario-kart-agent).
 
 
 ## Games
