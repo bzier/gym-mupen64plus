@@ -142,36 +142,18 @@ class MarioKartEnv(Mupen64PlusEnv):
         return ckpt_val if ckpt_val != -1 else self.lap
 
     def _generate_checkpoints(self, min_x, min_y, max_x, max_y):
-        # TODO: I'm sure this can/should be more pythonic somehow
-
-        # Sample 4 pixels for each checkpoint to reduce the
-        # likelihood of a pixel matching the color by chance
-
-        # Top
-        for i in range((max_x - min_x) / 2):
-            x_val = min_x + i*2
-            y_val = min_y
-            yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
-
-        # Right-side
-        for i in range((max_y - min_y) / 2):
-            x_val = max_x
-            y_val = min_y + i*2
-            yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
-        
-        # Bottom
-        for i in range((max_x - min_x) / 2):
-            if i == 0: # Skip the bottom right corner (for some reason MK doesn't draw it)
-                continue
-            x_val = max_x - i*2
-            y_val = max_y
-            yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
-        
-        # Left-side
-        for i in range((max_y - min_y) / 2):
-            x_val = min_x
-            y_val = max_y - i*2
-            yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
+        i, x, y = 0, min_x - 2, min_y # Start just left of the upper left corner
+        for dx, dy in (2, 0), (0, 2), (-2, 0), (0, -2): # Iterate deltas for each direction (right, down, left, up)
+            x, y = x + dx, y + dy # Step into the rectangle
+            while x in range(min_x, max_x + 1) and y in range(min_y, max_y + 1): # Stay within the bounds of the rectangle
+                # Skip the bottom right corner (for some reason MK doesn't draw it)
+                # Skip the upper left corner the second time to not duplicate (i.e. not the very first iteration)
+                if not (x == max_x and y == max_y) and \
+                   not (x == min_x and y == min_y and i > 0):
+                    # Sample 4 pixels for each point to reduce the likelihood of a pixel matching the color by chance
+                    yield [(x, y), (x + 1, y), (x, y + 1), (x + 1, y + 1)]
+                x, y = x + dx, y + dy # Step along the delta direction
+            i, x, y = i + 1, x - dx, y - dy # Step back once before changing direction
 
     def _get_current_checkpoint(self):
         checkpoint_values = map(self._evaluate_checkpoint, self.CHECKPOINT_LOCATIONS)
