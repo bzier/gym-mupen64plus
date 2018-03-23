@@ -3,6 +3,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import abc
 import array
 import inspect
+import itertools
 import json
 import os
 import subprocess
@@ -18,7 +19,6 @@ from gym.utils import seeding
 import numpy as np
 
 import mss
-
 
 ###############################################
 class ImageHelper:
@@ -70,13 +70,24 @@ class Mupen64PlusEnv(gym.Env):
 
     def _step(self, action):
         #cprint('Step %i: %s' % (self.step_count, action), 'green')
-        self.controller_server.send_controls(action)
+        self._act(action)
         obs = self._observe()
         self.episode_over = self._evaluate_end_state()
         reward = self._get_reward()
 
         self.step_count += 1
         return obs, reward, self.episode_over, {}
+
+    def _act(self, action, count=1):
+        for _ in itertools.repeat(None, count):
+            self.controller_server.send_controls(action)
+
+    def _wait(self, count=1, wait_for='Unknown'):
+        self._act(ControllerState.NO_OP, count=count)
+
+    def _press_button(self, button):
+        self._act(button) # Press
+        self._act(ControllerState.NO_OP) # and release
 
     def _observe(self):
         #cprint('Observe called!', 'yellow')
@@ -121,6 +132,8 @@ class Mupen64PlusEnv(gym.Env):
         self.reset_count += 1
 
         self.step_count = 0
+        # TODO: Config or environment argument
+        self.controller_server.frame_skip = 5
         return self._observe()
 
     def _render(self, mode='human', close=False):
@@ -155,7 +168,7 @@ class Mupen64PlusEnv(gym.Env):
 
     def _stop_controller_server(self):
         #cprint('Stop Controller Server called!', 'yellow')
-        if self.controller_server is not None:
+        if hasattr(self, 'controller_server'):
             self.controller_server.shutdown()
 
     def _start_emulator(self,
@@ -182,6 +195,7 @@ class Mupen64PlusEnv(gym.Env):
             raise Exception(msg)
 
         cmd = [config['MUPEN_CMD'],
+               "--nospeedlimit",
                "--resolution",
                "%ix%i" % (res_w, res_h),
                "--audio", "dummy",
@@ -217,7 +231,7 @@ class Mupen64PlusEnv(gym.Env):
                 # (most likely due to a server already active on the display_num)
                 if xvfb_proc.poll() is None:
                     success = True
-                
+
                 print('')
 
             if not success:
@@ -229,7 +243,7 @@ class Mupen64PlusEnv(gym.Env):
             cprint('Using DISPLAY %s' % os.environ["DISPLAY"], 'blue')
             cprint('Changed to DISPLAY %s' % os.environ["DISPLAY"], 'red')
 
-            cmd = [config['VGLRUN_CMD']] + cmd
+            cmd = [config['VGLRUN_CMD'], "-d", ":" + str(display_num)] + cmd
 
         cprint('Starting emulator with comand: %s' % cmd, 'yellow')
 
@@ -262,11 +276,11 @@ class Mupen64PlusEnv(gym.Env):
     def _kill_emulator(self):
         #cprint('Kill Emulator called!', 'yellow')
         try:
-            self.controller_server.send_controls(ControllerState.NO_OP)
+            self._act(ControllerState.NO_OP)
             if self.emulator_process is not None:
                 self.emulator_process.kill()
             if self.xvfb_process is not None:
-                self.xvfb_process.kill()
+                self.xvfb_process.terminate()
         except AttributeError:
             pass # We may be shut down during intialization before these attributes have been set
 
@@ -296,7 +310,8 @@ class ControllerState(object):
     JOYSTICK_LEFT = [-80, 0, 0, 0, 0]
     JOYSTICK_RIGHT = [80, 0, 0, 0, 0]
 
-    def __init__(self, controls=NO_OP, start_button=0):
+    # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
+    def __init__(self, controls=NO_OP, start_button=0, r_cbutton=0):
         self.START_BUTTON = start_button
         self.X_AXIS = controls[0]
         self.Y_AXIS = controls[1]
@@ -305,6 +320,7 @@ class ControllerState(object):
         self.R_TRIG = controls[4]
         self.L_TRIG = 0
         self.Z_TRIG = 0
+        self.R_CBUTTON = r_cbutton
 
     def to_json(self):
         return json.dumps(self.__dict__)
@@ -317,16 +333,20 @@ class ControllerHTTPServer(HTTPServer, object):
         self.controls = ControllerState()
         self.hold_response = True
         self.running = True
+        self.send_count = 0
+        self.frame_skip = 0
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
-    def send_controls(self, controls, start_button=0):
+    # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
+    def send_controls(self, controls, start_button=0, r_cbutton=0):
         #print('Send controls called')
-        self.controls = ControllerState(controls, start_button)
+        self.send_count = 0
+        self.controls = ControllerState(controls, start_button, r_cbutton)
         self.hold_response = False
 
         # Wait for controls to be sent:
-        start = time.time()
-        while not self.hold_response and time.time() < start + self.control_timeout:
+        #start = time.time()
+        while not self.hold_response: # and time.time() < start + self.control_timeout:
             time.sleep(MILLISECOND)
 
     def shutdown(self):
@@ -336,7 +356,7 @@ class ControllerHTTPServer(HTTPServer, object):
 
     class ControllerRequestHandler(BaseHTTPRequestHandler, object):
 
-        def log_message(self, format, *args):
+        def log_message(self, fmt, *args):
             pass
 
         def write_response(self, resp_code, resp_data):
@@ -353,13 +373,16 @@ class ControllerHTTPServer(HTTPServer, object):
             if not self.server.running:
                 print('Sending SHUTDOWN response')
                 # TODO: This sometimes fails with a broken pipe because
-                # the emulator has already stopped. Should handle gracefully
+                # the emulator has already stopped. Should handle gracefully (Issue #4)
                 self.write_response(500, "SHUTDOWN")
 
             ### respond with controller output
             self.write_response(200, self.server.controls.to_json())
+            self.server.send_count += 1
 
-            self.server.hold_response = True
+            # If we have send the controls 'n' times, now we block until the next action is sent
+            if self.server.send_count >= self.server.frame_skip:
+                self.server.hold_response = True
             return
 
 ###############################################
