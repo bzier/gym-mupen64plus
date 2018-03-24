@@ -5,11 +5,6 @@ PORT_NUMBER: 8082
 #   server to send controls (the action) before returning:
 ACTION_TIMEOUT: 5
 
-# The width, height, and depth of the emulator window:
-SCR_W: 640
-SCR_H: 480
-SCR_D: 3
-
 # The offset location of where the emulator window appears on screen:
 # (has no effect when using XVFB - offset is 0,0)
 OFFSET_X: 400
