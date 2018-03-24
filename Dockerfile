@@ -1,4 +1,5 @@
-FROM ubuntu:xenial-20170915
+################################################################
+FROM ubuntu:xenial-20170915 AS base
 
 
 # Setup environment variables in a single layer
@@ -11,32 +12,15 @@ ENV \
     DISPLAY=:0
 
 
-# Update package cache and install dependencies
+################################################################
+FROM base AS buildstuff
+
 RUN apt-get update && \
     apt-get install -y \
-        python python-pip python-setuptools python-dev \
         build-essential dpkg-dev libwebkitgtk-dev libjpeg-dev libtiff-dev libgtk2.0-dev \
         libsdl1.2-dev libgstreamer-plugins-base0.10-dev libnotify-dev freeglut3 freeglut3-dev \
         libjson-c2 libjson-c-dev \
-        wget git \
-        xorg xvfb x11-apps x11vnc \
-        imagemagick \
-        mupen64plus \
-        nano
-
-
-# TODO: Is upgrading virtualenv necessary?
-# Upgrade pip and virtualenv
-RUN pip install --upgrade pip virtualenv 
-
-
-# install VirtualGL (provides vglrun to allow us to run the emulator in XVFB)
-# (Check for new releases here: https://github.com/VirtualGL/virtualgl/releases)
-ENV VIRTUALGL_VERSION=2.5.2
-RUN wget "https://sourceforge.net/projects/virtualgl/files/${VIRTUALGL_VERSION}/virtualgl_${VIRTUALGL_VERSION}_amd64.deb" && \
-    apt install ./virtualgl_${VIRTUALGL_VERSION}_amd64.deb && \
-    rm virtualgl_${VIRTUALGL_VERSION}_amd64.deb
-
+        git
 
 # clone, build, and install the input bot
 # (explicitly specifying commit hash to attempt to guarantee behavior within this container)
@@ -52,6 +36,34 @@ RUN git clone https://github.com/mupen64plus/mupen64plus-core && \
     make install
 
 
+################################################################
+FROM base
+
+# Expose the default VNC port for connecting with a client/viewer outside the container
+EXPOSE 5900
+
+# Update package cache and install dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        python python-pip python-setuptools python-dev \
+        wget \
+        xvfb libxv1 x11vnc \
+        imagemagick \
+        mupen64plus \
+        nano
+
+# Upgrade pip
+RUN pip install --upgrade pip 
+
+# install VirtualGL (provides vglrun to allow us to run the emulator in XVFB)
+# (Check for new releases here: https://github.com/VirtualGL/virtualgl/releases)
+ENV VIRTUALGL_VERSION=2.5.2
+RUN wget "https://sourceforge.net/projects/virtualgl/files/${VIRTUALGL_VERSION}/virtualgl_${VIRTUALGL_VERSION}_amd64.deb" && \
+    apt install ./virtualgl_${VIRTUALGL_VERSION}_amd64.deb && \
+    rm virtualgl_${VIRTUALGL_VERSION}_amd64.deb
+
+COPY --from=buildstuff /usr/local/lib/mupen64plus/mupen64plus-input-bot.so /usr/local/lib/mupen64plus/
+
 # Copy the gym environment (current directory)
 COPY . /src/gym-mupen64plus
 WORKDIR /src/gym-mupen64plus
@@ -62,8 +74,4 @@ WORKDIR /src
 
 # Declare ROMs as a volume for mounting a host path outside the container
 VOLUME /src/gym-mupen64plus/gym_mupen64plus/ROMs/
-
-
-# Expose the default VNC port for connecting with a client/viewer outside the container
-EXPOSE 5900
 
