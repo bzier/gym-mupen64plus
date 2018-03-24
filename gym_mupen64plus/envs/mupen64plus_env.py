@@ -37,6 +37,11 @@ class ImageHelper:
 
 config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "config.yml")))
 
+# The width, height, and depth of the emulator window:
+SCR_W = 640
+SCR_H = 480
+SCR_D = 3
+
 MILLISECOND = 1.0 / 1000.0
 
 IMAGE_HELPER = ImageHelper()
@@ -60,7 +65,7 @@ class Mupen64PlusEnv(gym.Env):
         self._navigate_menu()
 
         self.observation_space = \
-            spaces.Box(low=0, high=255, shape=(config['SCR_H'], config['SCR_W'], config['SCR_D']))
+            spaces.Box(low=0, high=255, shape=(SCR_H, SCR_W, SCR_D))
 
         self.action_space = spaces.MultiDiscrete([[-80, 80], # Joystick X-axis
                                                   [-80, 80], # Joystick Y-axis
@@ -102,8 +107,8 @@ class Mupen64PlusEnv(gym.Env):
         image_array = \
             np.array(self.mss_grabber.grab({"top": offset_y,
                                             "left": offset_x,
-                                            "width": config['SCR_W'],
-                                            "height": config['SCR_H']}),
+                                            "width": SCR_W,
+                                            "height": SCR_H}),
                      dtype=np.uint8)
 
         # drop the alpha channel and flip red and blue channels (BGRA -> RGB)
@@ -173,9 +178,9 @@ class Mupen64PlusEnv(gym.Env):
 
     def _start_emulator(self,
                         rom_name,
-                        res_w=config['SCR_W'],
-                        res_h=config['SCR_H'],
-                        res_d=config['SCR_D'],
+                        res_w=SCR_W,
+                        res_h=SCR_H,
+                        res_d=SCR_D,
                         input_driver_path=config['INPUT_DRIVER_PATH']):
 
         rom_path = os.path.abspath(
@@ -291,7 +296,11 @@ class EmulatorMonitor:
         emu_return = emulator.poll()
         while emu_return is None:
             time.sleep(2)
-            emu_return = emulator.poll()
+            if emulator is not None:
+                emu_return = emulator.poll()
+            else:
+                print('Emulator reference is no longer valid. Shutting down?')
+                return
 
         # TODO: this means our environment died... need to die too
         print('Emulator closed with code: ' + str(emu_return))

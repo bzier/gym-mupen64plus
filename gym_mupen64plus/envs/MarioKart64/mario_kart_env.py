@@ -51,8 +51,8 @@ class MarioKartEnv(Mupen64PlusEnv):
         self.step_count_at_lap = 0
         self.last_known_lap = -1
 
+        self.CHECKPOINT_LOCATIONS = list(self._generate_checkpoints(64, 36, 584, 444)) 
         if self.ENABLE_CHECKPOINTS:
-            self.CHECKPOINT_LOCATIONS = list(self._generate_checkpoints(64, 36, 584, 444)) 
             self._checkpoint_tracker = [[False for i in range(len(self.CHECKPOINT_LOCATIONS))] for j in range(3)]
             self.last_known_ckpt = -1
         
