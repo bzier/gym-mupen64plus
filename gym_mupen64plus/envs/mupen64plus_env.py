@@ -291,7 +291,11 @@ class EmulatorMonitor:
         emu_return = emulator.poll()
         while emu_return is None:
             time.sleep(2)
-            emu_return = emulator.poll()
+            if emulator is not None:
+                emu_return = emulator.poll()
+            else:
+                print('Emulator reference is no longer valid. Shutting down?')
+                return
 
         # TODO: this means our environment died... need to die too
         print('Emulator closed with code: ' + str(emu_return))
