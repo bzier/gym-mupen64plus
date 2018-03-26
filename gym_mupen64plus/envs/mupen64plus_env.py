@@ -69,9 +69,21 @@ class Mupen64PlusEnv(gym.Env):
 
         self.action_space = spaces.MultiDiscrete([[-80, 80], # Joystick X-axis
                                                   [-80, 80], # Joystick Y-axis
-                                                  [0, 1], # A Button
-                                                  [0, 1], # B Button
-                                                  [0, 1]]) # RB Button
+                                                  [  0,  1], # A Button
+                                                  [  0,  1], # B Button
+                                                  [  0,  1], # RB Button
+                                                  [  0,  1], # LB Button
+                                                  [  0,  1], # Z Button
+                                                  [  0,  1], # C Right Button
+                                                  [  0,  1], # C Left Button
+                                                  [  0,  1], # C Down Button
+                                                  [  0,  1], # C Up Button
+                                                  [  0,  1], # D-Pad Right Button
+                                                  [  0,  1], # D-Pad Left Button
+                                                  [  0,  1], # D-Pad Down Button
+                                                  [  0,  1], # D-Pad Up Button
+                                                  [  0,  1], # Start Button
+                                                 ])
 
     def _step(self, action):
         #cprint('Step %i: %s' % (self.step_count, action), 'green')
@@ -85,7 +97,7 @@ class Mupen64PlusEnv(gym.Env):
 
     def _act(self, action, count=1):
         for _ in itertools.repeat(None, count):
-            self.controller_server.send_controls(action)
+            self.controller_server.send_controls(ControllerState(action))
 
     def _wait(self, count=1, wait_for='Unknown'):
         self._act(ControllerState.NO_OP, count=count)
@@ -309,27 +321,35 @@ class EmulatorMonitor:
 ###############################################
 class ControllerState(object):
 
-    # Controls
-    NO_OP = [0, 0, 0, 0, 0]
-    A_BUTTON = [0, 0, 1, 0, 0]
-    B_BUTTON = [0, 0, 0, 1, 0]
-    RB_BUTTON = [0, 0, 0, 0, 1]
-    JOYSTICK_UP = [0, 80, 0, 0, 0]
-    JOYSTICK_DOWN = [0, -80, 0, 0, 0]
-    JOYSTICK_LEFT = [-80, 0, 0, 0, 0]
-    JOYSTICK_RIGHT = [80, 0, 0, 0, 0]
+    # Controls       [ JX,  JY,  A,  B, RB, LB,  Z, CR, CL, CD, CU, DR, DL, DD, DU,  S]
+    NO_OP          = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    START_BUTTON   = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1]
+    A_BUTTON       = [  0,   0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    B_BUTTON       = [  0,   0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    RB_BUTTON      = [  0,   0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    CR_BUTTON      = [  0,   0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_UP    = [  0,  80,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_DOWN  = [  0, -80,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_LEFT  = [-80,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_RIGHT = [ 80,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
 
-    # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
-    def __init__(self, controls=NO_OP, start_button=0, r_cbutton=0):
-        self.START_BUTTON = start_button
+    def __init__(self, controls=NO_OP):
         self.X_AXIS = controls[0]
         self.Y_AXIS = controls[1]
         self.A_BUTTON = controls[2]
         self.B_BUTTON = controls[3]
         self.R_TRIG = controls[4]
-        self.L_TRIG = 0
-        self.Z_TRIG = 0
-        self.R_CBUTTON = r_cbutton
+        self.L_TRIG = controls[5]
+        self.Z_TRIG = controls[6]
+        self.R_CBUTTON = controls[7]
+        self.L_CBUTTON = controls[8]
+        self.D_CBUTTON = controls[9]
+        self.U_CBUTTON = controls[10]
+        self.R_DPAD = controls[11]
+        self.L_DPAD = controls[12]
+        self.D_DPAD = controls[13]
+        self.U_DPAD = controls[14]
+        self.START_BUTTON = controls[15]
 
     def to_json(self):
         return json.dumps(self.__dict__)
@@ -346,11 +366,10 @@ class ControllerHTTPServer(HTTPServer, object):
         self.frame_skip = 0
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
-    # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
-    def send_controls(self, controls, start_button=0, r_cbutton=0):
+    def send_controls(self, controls):
         #print('Send controls called')
         self.send_count = 0
-        self.controls = ControllerState(controls, start_button, r_cbutton)
+        self.controls = controls
         self.hold_response = False
 
         # Wait for controls to be sent:
