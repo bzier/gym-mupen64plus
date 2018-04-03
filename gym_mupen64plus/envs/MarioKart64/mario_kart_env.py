@@ -40,8 +40,9 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     ENABLE_CHECKPOINTS = False
 
-    def __init__(self, character='mario'):
+    def __init__(self, character='mario', course='LuigiRaceway'):
         self._set_character(character)
+        self._set_course(course)
         super(MarioKartEnv, self).__init__(mk_config['ROM_NAME'])
         self.end_episode_confidence = 0
 
@@ -361,3 +362,23 @@ class MarioKartEnv(Mupen64PlusEnv):
                       'bowser' : (1, 3)}
 
         self.PLAYER_ROW, self.PLAYER_COL = characters[character]
+
+    def _set_course(self, course):
+        courses = {'LuigiRaceway'     : (0, 0),
+                   'MooMooFarm'       : (0, 1),
+                   'KoopaTroopaBeach' : (0, 2),
+                   'KalimariDesert'   : (0, 3),
+                   'ToadsTurnpike'    : (1, 0),
+                   'FrappeSnowland'   : (1, 1),
+                   'ChocoMountain'    : (1, 2),
+                   'MarioRaceway'     : (1, 3),
+                   'WarioStadium'     : (2, 0),
+                   'SherbetLand'      : (2, 1),
+                   'RoyalRaceway'     : (2, 2),
+                   'BowsersCastle'    : (2, 3),
+                   'DKsJungleParkway' : (3, 0),
+                   'YoshiValley'      : (3, 1),
+                   'BansheeBoardwalk' : (3, 2),
+                   'RainbowRoad'      : (3, 3)}
+
+        self.MAP_SERIES, self.MAP_CHOICE = courses[course]
