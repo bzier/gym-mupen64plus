@@ -41,9 +41,9 @@ class MarioKartEnv(Mupen64PlusEnv):
     ENABLE_CHECKPOINTS = False
 
     def __init__(self, character='mario'):
+        self._set_character(character)
         super(MarioKartEnv, self).__init__(mk_config['ROM_NAME'])
         self.end_episode_confidence = 0
-        self._set_character(character)
 
     def _reset(self):
         
@@ -360,4 +360,4 @@ class MarioKartEnv(Mupen64PlusEnv):
                       'wario'  : (1, 2),
                       'bowser' : (1, 3)}
 
-        self.PLAYER_ROW, self.PLAYER_COLUMN = characters[character]
+        self.PLAYER_ROW, self.PLAYER_COL = characters[character]
