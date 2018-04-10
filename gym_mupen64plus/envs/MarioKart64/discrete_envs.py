@@ -31,8 +31,8 @@ class MarioKartDiscreteEnv(MarioKartEnv):
 
     ENABLE_CHECKPOINTS = True
 
-    def __init__(self, course='LuigiRaceway'):
-        super(MarioKartDiscreteEnv, self).__init__(course=course)
+    def __init__(self, character='mario', course='LuigiRaceway'):
+        super(MarioKartDiscreteEnv, self).__init__(character=character, course=course)
 
         # This needs to happen after the parent class init to effectively override the action space
         self.action_space = DiscreteActions.get_action_space()

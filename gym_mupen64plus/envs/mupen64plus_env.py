@@ -90,9 +90,10 @@ class Mupen64PlusEnv(gym.Env):
     def _wait(self, count=1, wait_for='Unknown'):
         self._act(ControllerState.NO_OP, count=count)
 
-    def _press_button(self, button):
-        self._act(button) # Press
-        self._act(ControllerState.NO_OP) # and release
+    def _press_button(self, button, times=1):
+        for _ in itertools.repeat(None, times):
+            self._act(button) # Press
+            self._act(ControllerState.NO_OP) # and release
 
     def _observe(self):
         #cprint('Observe called!', 'yellow')
