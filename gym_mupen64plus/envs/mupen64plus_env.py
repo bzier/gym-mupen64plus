@@ -378,17 +378,14 @@ class ControllerHTTPServer(HTTPServer, object):
         def log_message(self, fmt, *args):
             pass
 
-        def write_response(self, resp_code, resp_data):
+        def write_response(self, resp_code, resp_data, content_type="text/plain"):
             if PY3_OR_LATER:
-                self.send_response(resp_code)
-                self.send_header("Content-type", "text/plain".encode())
-                self.end_headers()
-                self.wfile.write(resp_data.encode())
-            else:
-                self.send_response(resp_code)
-                self.send_header("Content-type", "text/plain")
-                self.end_headers()
-                self.wfile.write(resp_data)
+                content_type = content_type.encode()
+                resp_data = resp_data.encode()
+            self.send_response(resp_code)
+            self.send_header("Content-type", content_type)
+            self.end_headers()
+            self.wfile.write(resp_data)
 
         def do_GET(self):
 
