@@ -68,7 +68,7 @@ class Mupen64PlusEnv(gym.Env):
         self.running = True
         self.mss_grabber = None
         self.episode_over = False
-        self.numpy_array = None
+        self.pixel_array = None
         self.controller_server, self.controller_server_thread = self._start_controller_server()
         self.xvfb_process, self.emulator_process = self._start_emulator(rom_name=rom_name)
         self._navigate_menu()
@@ -122,10 +122,10 @@ class Mupen64PlusEnv(gym.Env):
                      dtype=np.uint8)
 
         # drop the alpha channel and flip red and blue channels (BGRA -> RGB)
-        self.numpy_array = \
+        self.pixel_array = \
             np.flip(image_array[:, :, :3], 2)
 
-        return self.numpy_array
+        return self.pixel_array
 
     @abc.abstractmethod
     def _navigate_menu(self):
@@ -157,7 +157,7 @@ class Mupen64PlusEnv(gym.Env):
                 self.viewer.close()
                 self.viewer = None
             return
-        img = self.numpy_array
+        img = self.pixel_array
         if mode == 'rgb_array':
             return img
         elif mode == 'human':
