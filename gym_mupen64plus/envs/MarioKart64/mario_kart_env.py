@@ -4,6 +4,7 @@ import itertools
 import os
 import yaml
 from termcolor import cprint
+from gym import spaces
 from gym_mupen64plus.envs.mupen64plus_env \
   import Mupen64PlusEnv, ControllerState, IMAGE_HELPER
 import numpy as np
@@ -45,6 +46,18 @@ class MarioKartEnv(Mupen64PlusEnv):
         self._set_course(course)
         super(MarioKartEnv, self).__init__(mk_config['ROM_NAME'])
         self.end_episode_confidence = 0
+        
+        self.action_space = spaces.MultiDiscrete([[-80, 80],  # Joystick X-axis
+                                                  [-80, 80],  # Joystick Y-axis
+                                                  [  0,  1],  # A Button
+                                                  [  0,  1],  # B Button
+                                                  [  0,  1]]) # RB Button
+
+    def _step(self, action):
+        # Interpret the action choice and get the actual controller state for this step
+        controls = action + [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+
+        return super(MarioKartEnv, self)._step(controls)
 
     def _reset(self):
         
@@ -61,30 +74,25 @@ class MarioKartEnv(Mupen64PlusEnv):
         if self.reset_count > 0:
 
             # Make sure we don't skip frames while navigating the menus
-            frame_skip = self.controller_server.frame_skip
-            self.controller_server.frame_skip = 0
+            with self.controller_server.frame_skip_disabled():
 
-            if self.episode_over:
-                self._wait(count=275)
-                self._navigate_post_race_menu()
-                self._wait(count=40, wait_for='map select screen')
-                self._navigate_map_select()
-                self._wait(count=50, wait_for='race to load')
-                self.episode_over = False
-                self.end_episode_confidence = 0
-            else:
-                # Can't pause the race until the light turns green
-                if (self.step_count * frame_skip) < 120:
-                    steps_to_wait = 100 - (self.step_count * frame_skip)
-                    self._wait(count=steps_to_wait, wait_for='green light so we can pause')
-                self.controller_server.send_controls(ControllerState.NO_OP, start_button=1)
-                self._act(ControllerState.NO_OP)
-                self._press_button(ControllerState.JOYSTICK_DOWN)
-                self._press_button(ControllerState.A_BUTTON)
-                self._wait(count=76, wait_for='race to load')
-
-            # Put things back the way we found them
-            self.controller_server.frame_skip = frame_skip
+                if self.episode_over:
+                    self._wait(count=275)
+                    self._navigate_post_race_menu()
+                    self._wait(count=40, wait_for='map select screen')
+                    self._navigate_map_select()
+                    self._wait(count=50, wait_for='race to load')
+                    self.episode_over = False
+                    self.end_episode_confidence = 0
+                else:
+                    # Can't pause the race until the light turns green
+                    if (self.step_count * self.controller_server.frame_skip) < 120:
+                        steps_to_wait = 100 - (self.step_count * self.controller_server.frame_skip)
+                        self._wait(count=steps_to_wait, wait_for='green light so we can pause')
+                    self._press_button(ControllerState.START_BUTTON)
+                    self._press_button(ControllerState.JOYSTICK_DOWN)
+                    self._press_button(ControllerState.A_BUTTON)
+                    self._wait(count=76, wait_for='race to load')
 
         return super(MarioKartEnv, self)._reset()
 
@@ -321,8 +329,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     def _cycle_hud_view(self, times=1):
         for _ in itertools.repeat(None, times):
-            self.controller_server.send_controls(ControllerState.NO_OP, r_cbutton=1)
-            self._act(ControllerState.NO_OP)
+            self._press_button(ControllerState.CR_BUTTON)
 
     def _navigate_post_race_menu(self):
         # Times screen

@@ -11,6 +11,7 @@ else:
 
 import abc
 import array
+from contextlib import contextmanager
 import inspect
 import itertools
 import json
@@ -71,16 +72,29 @@ class Mupen64PlusEnv(gym.Env):
         self.pixel_array = None
         self.controller_server, self.controller_server_thread = self._start_controller_server()
         self.xvfb_process, self.emulator_process = self._start_emulator(rom_name=rom_name)
-        self._navigate_menu()
+        with self.controller_server.frame_skip_disabled():
+            self._navigate_menu()
 
         self.observation_space = \
             spaces.Box(low=0, high=255, shape=(SCR_H, SCR_W, SCR_D))
 
         self.action_space = spaces.MultiDiscrete([[-80, 80], # Joystick X-axis
                                                   [-80, 80], # Joystick Y-axis
-                                                  [0, 1], # A Button
-                                                  [0, 1], # B Button
-                                                  [0, 1]]) # RB Button
+                                                  [  0,  1], # A Button
+                                                  [  0,  1], # B Button
+                                                  [  0,  1], # RB Button
+                                                  [  0,  1], # LB Button
+                                                  [  0,  1], # Z Button
+                                                  [  0,  1], # C Right Button
+                                                  [  0,  1], # C Left Button
+                                                  [  0,  1], # C Down Button
+                                                  [  0,  1], # C Up Button
+                                                  [  0,  1], # D-Pad Right Button
+                                                  [  0,  1], # D-Pad Left Button
+                                                  [  0,  1], # D-Pad Down Button
+                                                  [  0,  1], # D-Pad Up Button
+                                                  [  0,  1], # Start Button
+                                                 ])
 
     def _step(self, action):
         #cprint('Step %i: %s' % (self.step_count, action), 'green')
@@ -94,7 +108,7 @@ class Mupen64PlusEnv(gym.Env):
 
     def _act(self, action, count=1):
         for _ in itertools.repeat(None, count):
-            self.controller_server.send_controls(action)
+            self.controller_server.send_controls(ControllerState(action))
 
     def _wait(self, count=1, wait_for='Unknown'):
         self._act(ControllerState.NO_OP, count=count)
@@ -147,8 +161,6 @@ class Mupen64PlusEnv(gym.Env):
         self.reset_count += 1
 
         self.step_count = 0
-        # TODO: Config or environment argument
-        self.controller_server.frame_skip = 5
         return self._observe()
 
     def _render(self, mode='human', close=False):
@@ -173,8 +185,9 @@ class Mupen64PlusEnv(gym.Env):
         self._stop_controller_server()
 
     def _start_controller_server(self):
-        server = ControllerHTTPServer(('', config['PORT_NUMBER']),
-                                      config['ACTION_TIMEOUT'])
+        server = ControllerHTTPServer(server_address  = ('', config['PORT_NUMBER']),
+                                      control_timeout = config['ACTION_TIMEOUT'],
+                                      frame_skip      = config['FRAME_SKIP']) # TODO: Environment argument (with issue #26)
         server_thread = threading.Thread(target=server.serve_forever, args=())
         server_thread.daemon = True
         server_thread.start()
@@ -319,27 +332,35 @@ class EmulatorMonitor:
 ###############################################
 class ControllerState(object):
 
-    # Controls
-    NO_OP = [0, 0, 0, 0, 0]
-    A_BUTTON = [0, 0, 1, 0, 0]
-    B_BUTTON = [0, 0, 0, 1, 0]
-    RB_BUTTON = [0, 0, 0, 0, 1]
-    JOYSTICK_UP = [0, 80, 0, 0, 0]
-    JOYSTICK_DOWN = [0, -80, 0, 0, 0]
-    JOYSTICK_LEFT = [-80, 0, 0, 0, 0]
-    JOYSTICK_RIGHT = [80, 0, 0, 0, 0]
+    # Controls       [ JX,  JY,  A,  B, RB, LB,  Z, CR, CL, CD, CU, DR, DL, DD, DU,  S]
+    NO_OP          = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    START_BUTTON   = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1]
+    A_BUTTON       = [  0,   0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    B_BUTTON       = [  0,   0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    RB_BUTTON      = [  0,   0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    CR_BUTTON      = [  0,   0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_UP    = [  0,  80,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_DOWN  = [  0, -80,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_LEFT  = [-80,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_RIGHT = [ 80,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
 
-    # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
-    def __init__(self, controls=NO_OP, start_button=0, r_cbutton=0):
-        self.START_BUTTON = start_button
+    def __init__(self, controls=NO_OP):
         self.X_AXIS = controls[0]
         self.Y_AXIS = controls[1]
         self.A_BUTTON = controls[2]
         self.B_BUTTON = controls[3]
         self.R_TRIG = controls[4]
-        self.L_TRIG = 0
-        self.Z_TRIG = 0
-        self.R_CBUTTON = r_cbutton
+        self.L_TRIG = controls[5]
+        self.Z_TRIG = controls[6]
+        self.R_CBUTTON = controls[7]
+        self.L_CBUTTON = controls[8]
+        self.D_CBUTTON = controls[9]
+        self.U_CBUTTON = controls[10]
+        self.R_DPAD = controls[11]
+        self.L_DPAD = controls[12]
+        self.D_DPAD = controls[13]
+        self.U_DPAD = controls[14]
+        self.START_BUTTON = controls[15]
 
     def to_json(self):
         return json.dumps(self.__dict__)
@@ -347,20 +368,20 @@ class ControllerState(object):
 ###############################################
 class ControllerHTTPServer(HTTPServer, object):
 
-    def __init__(self, server_address, control_timeout):
+    def __init__(self, server_address, control_timeout, frame_skip):
         self.control_timeout = control_timeout
         self.controls = ControllerState()
         self.hold_response = True
         self.running = True
         self.send_count = 0
-        self.frame_skip = 0
+        self.frame_skip = frame_skip
+        self.frame_skip_enabled = True
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
-    # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
-    def send_controls(self, controls, start_button=0, r_cbutton=0):
+    def send_controls(self, controls):
         #print('Send controls called')
         self.send_count = 0
-        self.controls = ControllerState(controls, start_button, r_cbutton)
+        self.controls = controls
         self.hold_response = False
 
         # Wait for controls to be sent:
@@ -372,6 +393,12 @@ class ControllerHTTPServer(HTTPServer, object):
         self.running = False
         super(ControllerHTTPServer, self).shutdown()
 
+    # http://preshing.com/20110920/the-python-with-statement-by-example/#implementing-the-context-manager-as-a-generator
+    @contextmanager
+    def frame_skip_disabled(self):
+        self.frame_skip_enabled = False
+        yield True
+        self.frame_skip_enabled = True
 
     class ControllerRequestHandler(BaseHTTPRequestHandler, object):
 
@@ -402,8 +429,8 @@ class ControllerHTTPServer(HTTPServer, object):
             self.write_response(200, self.server.controls.to_json())
             self.server.send_count += 1
 
-            # If we have send the controls 'n' times, now we block until the next action is sent
-            if self.server.send_count >= self.server.frame_skip:
+            # If we have sent the controls 'n' times, now we block until the next action is sent
+            if self.server.send_count >= self.server.frame_skip or not self.server.frame_skip_enabled:
                 self.server.hold_response = True
             return
 
