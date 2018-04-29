@@ -1,4 +1,13 @@
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import sys
+
+PY3_OR_LATER = sys.version_info[0] >= 3
+
+if PY3_OR_LATER:
+    # Python 3 specific definitions
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+else:
+    # Python 2 specific definitions
+    from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 import abc
 import array
@@ -370,10 +379,16 @@ class ControllerHTTPServer(HTTPServer, object):
             pass
 
         def write_response(self, resp_code, resp_data):
-            self.send_response(resp_code)
-            self.send_header("Content-type", "text/plain")
-            self.end_headers()
-            self.wfile.write(resp_data)
+            if PY3_OR_LATER:
+                self.send_response(resp_code)
+                self.send_header("Content-type", "text/plain".encode())
+                self.end_headers()
+                self.wfile.write(resp_data.encode())
+            else:
+                self.send_response(resp_code)
+                self.send_header("Content-type", "text/plain")
+                self.end_headers()
+                self.wfile.write(resp_data)
 
         def do_GET(self):
 

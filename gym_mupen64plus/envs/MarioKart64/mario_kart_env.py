@@ -149,19 +149,19 @@ class MarioKartEnv(Mupen64PlusEnv):
         # likelihood of a pixel matching the color by chance
 
         # Top
-        for i in range((max_x - min_x) / 2):
+        for i in range((max_x - min_x) // 2):
             x_val = min_x + i*2
             y_val = min_y
             yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
 
         # Right-side
-        for i in range((max_y - min_y) / 2):
+        for i in range((max_y - min_y) // 2):
             x_val = max_x
             y_val = min_y + i*2
             yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
         
         # Bottom
-        for i in range((max_x - min_x) / 2):
+        for i in range((max_x - min_x) // 2):
             if i == 0: # Skip the bottom right corner (for some reason MK doesn't draw it)
                 continue
             x_val = max_x - i*2
@@ -169,13 +169,13 @@ class MarioKartEnv(Mupen64PlusEnv):
             yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
         
         # Left-side
-        for i in range((max_y - min_y) / 2):
+        for i in range((max_y - min_y) // 2):
             x_val = min_x
             y_val = max_y - i*2
             yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
 
     def _get_current_checkpoint(self):
-        checkpoint_values = map(self._evaluate_checkpoint, self.CHECKPOINT_LOCATIONS)
+        checkpoint_values = list(map(self._evaluate_checkpoint, self.CHECKPOINT_LOCATIONS))
 
         # Check if we have achieved any checkpoints
         if any(val > -1 for val in checkpoint_values):
@@ -211,8 +211,8 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     def _evaluate_checkpoint(self, checkpoint_points):
         pix_arr = self.numpy_array
-        checkpoint_pixels = map(lambda point: IMAGE_HELPER.GetPixelColor(pix_arr, point[0], point[1]), 
-                                checkpoint_points)
+        checkpoint_pixels = list(map(lambda point: IMAGE_HELPER.GetPixelColor(pix_arr, point[0], point[1]), 
+                                     checkpoint_points))
 
         #print(checkpoint_pixels)
         
