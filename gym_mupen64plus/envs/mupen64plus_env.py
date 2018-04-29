@@ -2,6 +2,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 import abc
 import array
+from contextlib import contextmanager
 import inspect
 import itertools
 import json
@@ -62,7 +63,8 @@ class Mupen64PlusEnv(gym.Env):
         self.numpy_array = None
         self.controller_server, self.controller_server_thread = self._start_controller_server()
         self.xvfb_process, self.emulator_process = self._start_emulator(rom_name=rom_name)
-        self._navigate_menu()
+        with self.controller_server.frame_skip_disabled():
+            self._navigate_menu()
 
         self.observation_space = \
             spaces.Box(low=0, high=255, shape=(SCR_H, SCR_W, SCR_D))
@@ -138,8 +140,6 @@ class Mupen64PlusEnv(gym.Env):
         self.reset_count += 1
 
         self.step_count = 0
-        # TODO: Config or environment argument
-        self.controller_server.frame_skip = 5
         return self._observe()
 
     def _render(self, mode='human', close=False):
@@ -164,8 +164,9 @@ class Mupen64PlusEnv(gym.Env):
         self._stop_controller_server()
 
     def _start_controller_server(self):
-        server = ControllerHTTPServer(('', config['PORT_NUMBER']),
-                                      config['ACTION_TIMEOUT'])
+        server = ControllerHTTPServer(server_address  = ('', config['PORT_NUMBER']),
+                                      control_timeout = config['ACTION_TIMEOUT'],
+                                      frame_skip      = config['FRAME_SKIP']) # TODO: Environment argument (with issue #26)
         server_thread = threading.Thread(target=server.serve_forever, args=())
         server_thread.daemon = True
         server_thread.start()
@@ -338,13 +339,14 @@ class ControllerState(object):
 ###############################################
 class ControllerHTTPServer(HTTPServer, object):
 
-    def __init__(self, server_address, control_timeout):
+    def __init__(self, server_address, control_timeout, frame_skip):
         self.control_timeout = control_timeout
         self.controls = ControllerState()
         self.hold_response = True
         self.running = True
         self.send_count = 0
-        self.frame_skip = 0
+        self.frame_skip = frame_skip
+        self.frame_skip_enabled = True
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
     # TODO: Hacky implementation of start and right c buttons... need full controller support (Issue #24)
@@ -363,6 +365,12 @@ class ControllerHTTPServer(HTTPServer, object):
         self.running = False
         super(ControllerHTTPServer, self).shutdown()
 
+    # http://preshing.com/20110920/the-python-with-statement-by-example/#implementing-the-context-manager-as-a-generator
+    @contextmanager
+    def frame_skip_disabled(self):
+        self.frame_skip_enabled = False
+        yield True
+        self.frame_skip_enabled = True
 
     class ControllerRequestHandler(BaseHTTPRequestHandler, object):
 
@@ -390,8 +398,8 @@ class ControllerHTTPServer(HTTPServer, object):
             self.write_response(200, self.server.controls.to_json())
             self.server.send_count += 1
 
-            # If we have send the controls 'n' times, now we block until the next action is sent
-            if self.server.send_count >= self.server.frame_skip:
+            # If we have sent the controls 'n' times, now we block until the next action is sent
+            if self.server.send_count >= self.server.frame_skip or not self.server.frame_skip_enabled:
                 self.server.hold_response = True
             return
 
