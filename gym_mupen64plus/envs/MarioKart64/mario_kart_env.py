@@ -41,7 +41,9 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     ENABLE_CHECKPOINTS = False
 
-    def __init__(self, character='mario'):
+    def __init__(self, character='mario', course='LuigiRaceway'):
+        self._set_character(character)
+        self._set_course(course)
         super(MarioKartEnv, self).__init__(mk_config['ROM_NAME'])
         self.end_episode_confidence = 0
         self._set_character(character)
@@ -293,18 +295,16 @@ class MarioKartEnv(Mupen64PlusEnv):
         self._press_button(ControllerState.A_BUTTON)
 
     def _navigate_player_select(self):
-        cur_row = 0
-        cur_col = 0
         print('Player row: ' + str(self.PLAYER_ROW))
         print('Player col: ' + str(self.PLAYER_COL))
 
-        if cur_row != self.PLAYER_ROW:
-            self._press_button(ControllerState.JOYSTICK_DOWN)
-            cur_row += 1
+        # Character selection is remembered each time, so ensure upper-left-most is selected
+        self._press_button(ControllerState.JOYSTICK_UP)
+        self._press_button(ControllerState.JOYSTICK_LEFT, times=3)
 
-        while cur_col != self.PLAYER_COL:
-            self._press_button(ControllerState.JOYSTICK_RIGHT)
-            cur_col += 1
+        # Navigate to character
+        self._press_button(ControllerState.JOYSTICK_DOWN, times=self.PLAYER_ROW)
+        self._press_button(ControllerState.JOYSTICK_RIGHT, times=self.PLAYER_COL)
 
         # Select character
         self._press_button(ControllerState.A_BUTTON)
@@ -313,21 +313,21 @@ class MarioKartEnv(Mupen64PlusEnv):
         self._press_button(ControllerState.A_BUTTON)
 
     def _navigate_map_select(self):
-        cur_row = 0
-        cur_col = 0
         print('Map series: ' + str(self.MAP_SERIES))
         print('Map choice: ' + str(self.MAP_CHOICE))
 
+        # Map series selection is remembered each time, so ensure left-most is selected
+        self._press_button(ControllerState.JOYSTICK_LEFT, times=3)
+
         # Select map series
-        while cur_col != self.MAP_SERIES:
-            self._press_button(ControllerState.JOYSTICK_RIGHT)
-            cur_col += 1
+        self._press_button(ControllerState.JOYSTICK_RIGHT, times=self.MAP_SERIES)
         self._press_button(ControllerState.A_BUTTON)
 
+        # Map choice selection is remembered each time, so ensure top-most is selected
+        self._press_button(ControllerState.JOYSTICK_UP, times=3)
+
         # Select map choice
-        while cur_row != self.MAP_CHOICE:
-            self._press_button(ControllerState.JOYSTICK_DOWN)
-            cur_row += 1
+        self._press_button(ControllerState.JOYSTICK_DOWN, times=self.MAP_CHOICE)
         self._press_button(ControllerState.A_BUTTON)
 
         # Press OK
@@ -353,8 +353,7 @@ class MarioKartEnv(Mupen64PlusEnv):
         # Because the previous choice is selected by default, we navigate to the top entry so our
         # navigation is consistent. The menu doesn't cycle top to bottom or bottom to top, so we can
         # just make sure we're at the top by hitting up a few times
-        for _ in itertools.repeat(None, 5):
-            self._press_button(ControllerState.JOYSTICK_UP)
+        self._press_button(ControllerState.JOYSTICK_UP, times=5)
 
         # Now we are sure to have the top entry selected
         # Go down to 'course change'
@@ -371,4 +370,24 @@ class MarioKartEnv(Mupen64PlusEnv):
                       'wario'  : (1, 2),
                       'bowser' : (1, 3)}
 
-        self.PLAYER_ROW, self.PLAYER_COLUMN = characters[character]
+        self.PLAYER_ROW, self.PLAYER_COL = characters[character]
+
+    def _set_course(self, course):
+        courses = {'LuigiRaceway'     : (0, 0),
+                   'MooMooFarm'       : (0, 1),
+                   'KoopaTroopaBeach' : (0, 2),
+                   'KalimariDesert'   : (0, 3),
+                   'ToadsTurnpike'    : (1, 0),
+                   'FrappeSnowland'   : (1, 1),
+                   'ChocoMountain'    : (1, 2),
+                   'MarioRaceway'     : (1, 3),
+                   'WarioStadium'     : (2, 0),
+                   'SherbetLand'      : (2, 1),
+                   'RoyalRaceway'     : (2, 2),
+                   'BowsersCastle'    : (2, 3),
+                   'DKsJungleParkway' : (3, 0),
+                   'YoshiValley'      : (3, 1),
+                   'BansheeBoardwalk' : (3, 2),
+                   'RainbowRoad'      : (3, 3)}
+
+        self.MAP_SERIES, self.MAP_CHOICE = courses[course]

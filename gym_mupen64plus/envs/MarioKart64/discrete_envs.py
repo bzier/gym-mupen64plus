@@ -1,5 +1,5 @@
 import abc
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartLuigiRacewayEnv
+from gym_mupen64plus.envs.MarioKart64.mario_kart_env import MarioKartEnv
 from gym import spaces
 
 class DiscreteActions:
@@ -27,12 +27,12 @@ class DiscreteActions:
         return DiscreteActions.ACTION_MAP[action][1]
 
 
-class MarioKartDiscreteLuigiRacewayEnv(MarioKartLuigiRacewayEnv):
+class MarioKartDiscreteEnv(MarioKartEnv):
 
     ENABLE_CHECKPOINTS = True
 
-    def __init__(self):
-        super(MarioKartDiscreteLuigiRacewayEnv, self).__init__()
+    def __init__(self, character='mario', course='LuigiRaceway'):
+        super(MarioKartDiscreteEnv, self).__init__(character=character, course=course)
 
         # This needs to happen after the parent class init to effectively override the action space
         self.action_space = DiscreteActions.get_action_space()
@@ -41,4 +41,4 @@ class MarioKartDiscreteLuigiRacewayEnv(MarioKartLuigiRacewayEnv):
         # Interpret the action choice and get the actual controller state for this step
         controls = DiscreteActions.get_controls_from_action(action)
 
-        return super(MarioKartDiscreteLuigiRacewayEnv, self)._step(controls)
+        return super(MarioKartDiscreteEnv, self)._step(controls)

@@ -1,215 +1,51 @@
 from gym.envs.registration import register
 
-from gym_mupen64plus.envs.MarioKart64.track_envs \
-import MarioKartLuigiRacewayEnv, \
-       MarioKartMooMooFarmEnv, \
-       MarioKartKoopaTroopaBeachEnv, \
-       MarioKartKalimariDesertEnv, \
-       MarioKartToadsTurnpikeEnv, \
-       MarioKartFrappeSnowlandEnv, \
-       MarioKartChocoMountainEnv, \
-       MarioKartMarioRacewayEnv, \
-       MarioKartWarioStadiumEnv, \
-       MarioKartSherbetLandEnv, \
-       MarioKartRoyalRacewayEnv, \
-       MarioKartBowsersCastleEnv, \
-       MarioKartDKsJungleParkwayEnv, \
-       MarioKartYoshiValleyEnv, \
-       MarioKartBansheeBoardwalkEnv, \
-       MarioKartRainbowRoadEnv
+from gym_mupen64plus.envs.MarioKart64.mario_kart_env import MarioKartEnv
+from gym_mupen64plus.envs.MarioKart64.discrete_envs import MarioKartDiscreteEnv
 
-from gym_mupen64plus.envs.MarioKart64.discrete_envs \
-import MarioKartDiscreteLuigiRacewayEnv
+courses = [
+    { 'name' : 'Luigi-Raceway',      'cup': 'Mushroom', 'max_steps': 1250 },
+    { 'name' : 'Moo-Moo-Farm',       'cup': 'Mushroom', 'max_steps': 1250 },
+    { 'name' : 'Koopa-Troopa-Beach', 'cup': 'Mushroom', 'max_steps': 1250 },
+    { 'name' : 'Kalimari-Desert',    'cup': 'Mushroom', 'max_steps': 1250 },
+    { 'name' : 'Toads-Turnpike',     'cup': 'Flower',   'max_steps': 1250 },
+    { 'name' : 'Frappe-Snowland',    'cup': 'Flower',   'max_steps': 1250 },
+    { 'name' : 'Choco-Mountain',     'cup': 'Flower',   'max_steps': 1250 },
+    { 'name' : 'Mario-Raceway',      'cup': 'Flower',   'max_steps': 1250 },
+    { 'name' : 'Wario-Stadium',      'cup': 'Star',     'max_steps': 1250 },
+    { 'name' : 'Sherbet-Land',       'cup': 'Star',     'max_steps': 1250 },
+    { 'name' : 'Royal-Raceway',      'cup': 'Star',     'max_steps': 1250 },
+    { 'name' : 'Bowsers-Castle',     'cup': 'Star',     'max_steps': 1250 },
+    { 'name' : 'DKs-Jungle-Parkway', 'cup': 'Special',  'max_steps': 1250 },
+    { 'name' : 'Yoshi-Valley',       'cup': 'Special',  'max_steps': 1250 },
+    { 'name' : 'Banshee-Boardwalk',  'cup': 'Special',  'max_steps': 1250 },
+    { 'name' : 'Rainbow-Road',       'cup': 'Special',  'max_steps': 1250 },
+]
 
-##### MUSHROOM CUP ####
-register(
-    id='Mario-Kart-Luigi-Raceway-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartLuigiRacewayEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Mushroom',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
+for course in courses:
 
-register(
-    id='Mario-Kart-Moo-Moo-Farm-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartMooMooFarmEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Mushroom',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
+    # Continuous Action Space:
+    register(
+        id='Mario-Kart-%s-v0' % course['name'],
+        entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartEnv',
+        kwargs={'course' : course['name'].replace('-','')},
+        tags={
+            'mupen': True,
+            'cup': course['cup'],
+            'wrapper_config.TimeLimit.max_episode_steps': course['max_steps'],
+        },
+        nondeterministic=True,
+    )
 
-register(
-    id='Mario-Kart-Koopa-Troopa-Beach-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartKoopaTroopaBeachEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Mushroom',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-Kalimari-Desert-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartKalimariDesertEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Mushroom',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-##### FLOWER CUP ####
-register(
-    id='Mario-Kart-Toads-Turnpike-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartToadsTurnpikeEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Flower',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-Frappe-Snowland-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartFrappeSnowlandEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Flower',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-Choco-Mountain-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartChocoMountainEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Flower',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-Mario-Raceway-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartMarioRacewayEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Flower',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-##### STAR CUP ####
-register(
-    id='Mario-Kart-Wario-Stadium-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartWarioStadiumEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Star',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-Sherbet-Land-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartSherbetLandEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Star',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-Royal-Raceway-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartRoyalRacewayEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Star',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-Bowsers-Castle-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartBowsersCastleEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Star',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-##### SPECIAL CUP ####
-register(
-    id='Mario-Kart-DKs-Jungle-Parkway-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartDKsJungleParkwayEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Special',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-Yoshi-Valley-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartYoshiValleyEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Special',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-BansheeBoardwalk-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartBansheeBoardwalkEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Special',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-register(
-    id='Mario-Kart-Rainbow-Road-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartRainbowRoadEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Special',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-
-### DISCRETE ACTION SPACE ###
-
-register(
-    id='Mario-Kart-Discrete-Luigi-Raceway-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartDiscreteLuigiRacewayEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Mushroom',
-        'wrapper_config.TimeLimit.max_episode_steps': 1250,
-    },
-    nondeterministic=True,
-)
+    # Discrete Action Space:
+    register(
+        id='Mario-Kart-Discrete-%s-v0' % course['name'],
+        entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartDiscreteEnv',
+        kwargs={'course' : course['name'].replace('-','')},
+        tags={
+            'mupen': True,
+            'cup': course['cup'],
+            'wrapper_config.TimeLimit.max_episode_steps': course['max_steps'],
+        },
+        nondeterministic=True,
+    )
