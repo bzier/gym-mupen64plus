@@ -46,7 +46,6 @@ class MarioKartEnv(Mupen64PlusEnv):
         self._set_course(course)
         super(MarioKartEnv, self).__init__(mk_config['ROM_NAME'])
         self.end_episode_confidence = 0
-        self._set_character(character)
         
         self.action_space = spaces.MultiDiscrete([[-80, 80],  # Joystick X-axis
                                                   [-80, 80],  # Joystick Y-axis
