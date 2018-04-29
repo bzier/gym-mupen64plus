@@ -74,29 +74,25 @@ class MarioKartEnv(Mupen64PlusEnv):
         if self.reset_count > 0:
 
             # Make sure we don't skip frames while navigating the menus
-            frame_skip = self.controller_server.frame_skip
-            self.controller_server.frame_skip = 0
+            with self.controller_server.frame_skip_disabled():
 
-            if self.episode_over:
-                self._wait(count=275)
-                self._navigate_post_race_menu()
-                self._wait(count=40, wait_for='map select screen')
-                self._navigate_map_select()
-                self._wait(count=50, wait_for='race to load')
-                self.episode_over = False
-                self.end_episode_confidence = 0
-            else:
-                # Can't pause the race until the light turns green
-                if (self.step_count * frame_skip) < 120:
-                    steps_to_wait = 100 - (self.step_count * frame_skip)
-                    self._wait(count=steps_to_wait, wait_for='green light so we can pause')
-                self._press_button(ControllerState.START_BUTTON)
-                self._press_button(ControllerState.JOYSTICK_DOWN)
-                self._press_button(ControllerState.A_BUTTON)
-                self._wait(count=76, wait_for='race to load')
-
-            # Put things back the way we found them
-            self.controller_server.frame_skip = frame_skip
+                if self.episode_over:
+                    self._wait(count=275)
+                    self._navigate_post_race_menu()
+                    self._wait(count=40, wait_for='map select screen')
+                    self._navigate_map_select()
+                    self._wait(count=50, wait_for='race to load')
+                    self.episode_over = False
+                    self.end_episode_confidence = 0
+                else:
+                    # Can't pause the race until the light turns green
+                    if (self.step_count * self.controller_server.frame_skip) < 120:
+                        steps_to_wait = 100 - (self.step_count * self.controller_server.frame_skip)
+                        self._wait(count=steps_to_wait, wait_for='green light so we can pause')
+                    self._press_button(ControllerState.START_BUTTON)
+                    self._press_button(ControllerState.JOYSTICK_DOWN)
+                    self._press_button(ControllerState.A_BUTTON)
+                    self._wait(count=76, wait_for='race to load')
 
         return super(MarioKartEnv, self)._reset()
 
