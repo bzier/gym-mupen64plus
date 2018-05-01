@@ -136,8 +136,7 @@ class Mupen64PlusEnv(gym.Env):
                      dtype=np.uint8)
 
         # drop the alpha channel and flip red and blue channels (BGRA -> RGB)
-        self.pixel_array = \
-            np.flip(image_array[:, :, :3], 2)
+        self.pixel_array = np.flip(image_array[:, :, :3], 2)
 
         return self.pixel_array
 
