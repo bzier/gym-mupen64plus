@@ -32,9 +32,10 @@ Please create issues as you encounter them. Future work and ideas will be captur
     sudo apt-get install mupen64plus
     ```
 
-* mupen64plus-input-bot
+* mupen64plus-input-bot (these instructions may have changed; the most current are on that project's [page](https://github.com/kevinhughes27/mupen64plus-input-bot))
     ```bash
     #!/bin/bash
+    sudo apt-get install libjson-c-dev libjson-c2
     mkdir mupen64plus-src && cd "$_"
     git clone https://github.com/mupen64plus/mupen64plus-core
     git clone https://github.com/kevinhughes27/mupen64plus-input-bot
