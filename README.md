@@ -33,15 +33,19 @@ Please create issues as you encounter them. Future work and ideas will be captur
     ```
 
 * mupen64plus-input-bot
-    ```bash
+
+    ```bash
     #!/bin/bash
     mkdir mupen64plus-src && cd "$_"
     git clone https://github.com/mupen64plus/mupen64plus-core
     git clone https://github.com/kevinhughes27/mupen64plus-input-bot
     cd mupen64plus-input-bot
     make all
-    sudo make install
-    ```
+    sudo make install
+    ```
+    
+    As these instructions may have changed, you can also view the most current on that project's [page](https://github.com/kevinhughes27/mupen64plus-input-bot)
+    
 
 * One or more N64 ROMs (see the [Games](#games) section below)
 
