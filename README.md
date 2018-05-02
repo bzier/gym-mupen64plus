@@ -41,7 +41,7 @@ Please create issues as you encounter them. Future work and ideas will be captur
     git clone https://github.com/kevinhughes27/mupen64plus-input-bot
     cd mupen64plus-input-bot
     make all
-    sudo make install
+    sudo make install
     ```
 
 * One or more N64 ROMs (see the [Games](#games) section below)
