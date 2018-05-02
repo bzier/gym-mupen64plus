@@ -33,7 +33,6 @@ Please create issues as you encounter them. Future work and ideas will be captur
     ```
 
 * mupen64plus-input-bot
-
     ```bash
     #!/bin/bash
     mkdir mupen64plus-src && cd "$_"
