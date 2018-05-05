@@ -375,6 +375,7 @@ class ControllerHTTPServer(HTTPServer, object):
         self.send_count = 0
         self.frame_skip = frame_skip
         self.frame_skip_enabled = True
+        self.TEXT_PLAIN_CONTENT_TYPE = "text/plain".encode()
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
     def send_controls(self, controls):
@@ -404,14 +405,11 @@ class ControllerHTTPServer(HTTPServer, object):
         def log_message(self, fmt, *args):
             pass
 
-        def write_response(self, resp_code, resp_data, content_type="text/plain"):
-            if PY3_OR_LATER:
-                content_type = content_type.encode()
-                resp_data = resp_data.encode()
+        def write_response(self, resp_code, resp_data):
             self.send_response(resp_code)
-            self.send_header("Content-type", content_type)
+            self.send_header("Content-type", self.server.TEXT_PLAIN_CONTENT_TYPE)
             self.end_headers()
-            self.wfile.write(resp_data)
+            self.wfile.write(resp_data.encode())
 
         def do_GET(self):
 
