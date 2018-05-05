@@ -1,4 +1,13 @@
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import sys
+
+PY3_OR_LATER = sys.version_info[0] >= 3
+
+if PY3_OR_LATER:
+    # Python 3 specific definitions
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+else:
+    # Python 2 specific definitions
+    from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 import abc
 import array
@@ -60,7 +69,7 @@ class Mupen64PlusEnv(gym.Env):
         self.running = True
         self.mss_grabber = None
         self.episode_over = False
-        self.numpy_array = None
+        self.pixel_array = None
         self.controller_server, self.controller_server_thread = self._start_controller_server()
         self.xvfb_process, self.emulator_process = self._start_emulator(rom_name=rom_name)
         with self.controller_server.frame_skip_disabled():
@@ -127,10 +136,9 @@ class Mupen64PlusEnv(gym.Env):
                      dtype=np.uint8)
 
         # drop the alpha channel and flip red and blue channels (BGRA -> RGB)
-        self.numpy_array = \
-            np.flip(image_array[:, :, :3], 2)
+        self.pixel_array = np.flip(image_array[:, :, :3], 2)
 
-        return self.numpy_array
+        return self.pixel_array
 
     @abc.abstractmethod
     def _navigate_menu(self):
@@ -160,7 +168,7 @@ class Mupen64PlusEnv(gym.Env):
                 self.viewer.close()
                 self.viewer = None
             return
-        img = self.numpy_array
+        img = self.pixel_array
         if mode == 'rgb_array':
             return img
         elif mode == 'human':
@@ -367,6 +375,7 @@ class ControllerHTTPServer(HTTPServer, object):
         self.send_count = 0
         self.frame_skip = frame_skip
         self.frame_skip_enabled = True
+        self.TEXT_PLAIN_CONTENT_TYPE = "text/plain".encode()
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
     def send_controls(self, controls):
@@ -398,9 +407,9 @@ class ControllerHTTPServer(HTTPServer, object):
 
         def write_response(self, resp_code, resp_data):
             self.send_response(resp_code)
-            self.send_header("Content-type", "text/plain")
+            self.send_header("Content-type", self.server.TEXT_PLAIN_CONTENT_TYPE)
             self.end_headers()
-            self.wfile.write(resp_data)
+            self.wfile.write(resp_data.encode())
 
         def do_GET(self):
 
