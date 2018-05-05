@@ -17,9 +17,12 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     # Indicates the color value of the pixel at point (203, 51)
     # This is where the lap number is present in the default HUD
-    LAP_COLOR_MAP = {(214, 156, 222): 1, # Lap 1
-                     (198, 140, 198): 2, # Lap 2
-                     ( 66,  49,  66): 3} # Lap 3
+    LAP_COLOR_MAP = [(214, 156, 222), # Lap 1 - Rice Plugin
+                     (198, 140, 198), # Lap 2 - Rice Plugin
+                     ( 66,  49,  66), # Lap 3 - Rice Plugin
+                    #(  ?,   ?,   ?), # Lap 1 - Glide64 Plugin
+                    #(  ?,   ?,   ?), # Lap 2 - Glide64 Plugin
+                     (214, 148, 214)] # Lap 3 - Glide64 Plugin
 
     HUD_PROGRESS_COLOR_VALUES = {(000, 000, 255): 1, #   Blue: Lap 1
                                  (255, 255, 000): 2, # Yellow: Lap 2
@@ -44,7 +47,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     def __init__(self, character='mario', course='LuigiRaceway'):
         self._set_character(character)
         self._set_course(course)
-        super(MarioKartEnv, self).__init__(mk_config['ROM_NAME'])
+        super(MarioKartEnv, self).__init__(sub_config=mk_config)
         self.end_episode_confidence = 0
         
         self.action_space = spaces.MultiDiscrete([[-80, 80],  # Joystick X-axis

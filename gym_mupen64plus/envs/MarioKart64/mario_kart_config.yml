@@ -1,1 +1,4 @@
 ROM_NAME: marioKart.n64
+
+# Override the default video plugin for MarioKart:
+GFX_PLUGIN: mupen64plus-video-glide64

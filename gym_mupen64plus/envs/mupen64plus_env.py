@@ -53,7 +53,8 @@ class Mupen64PlusEnv(gym.Env):
     __metaclass__ = abc.ABCMeta
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, rom_name):
+    def __init__(self, sub_config):
+        config.update(sub_config)
         self.viewer = None
         self.reset_count = 0
         self.step_count = 0
@@ -62,7 +63,7 @@ class Mupen64PlusEnv(gym.Env):
         self.episode_over = False
         self.numpy_array = None
         self.controller_server, self.controller_server_thread = self._start_controller_server()
-        self.xvfb_process, self.emulator_process = self._start_emulator(rom_name=rom_name)
+        self.xvfb_process, self.emulator_process = self._start_emulator(rom_name=config['ROM_NAME'], gfx_plugin=config['GFX_PLUGIN'])
         with self.controller_server.frame_skip_disabled():
             self._navigate_menu()
 
@@ -195,6 +196,7 @@ class Mupen64PlusEnv(gym.Env):
                         res_w=SCR_W,
                         res_h=SCR_H,
                         res_d=SCR_D,
+                        gfx_plugin=config['GFX_PLUGIN'],
                         input_driver_path=config['INPUT_DRIVER_PATH']):
 
         rom_path = os.path.abspath(
@@ -217,9 +219,9 @@ class Mupen64PlusEnv(gym.Env):
                "--nospeedlimit",
                "--resolution",
                "%ix%i" % (res_w, res_h),
+               "--gfx", gfx_plugin,
                "--audio", "dummy",
-               "--input",
-               input_driver_path,
+               "--input", input_driver_path,
                rom_path]
 
         initial_disp = os.environ["DISPLAY"]
@@ -322,7 +324,7 @@ class EmulatorMonitor:
 
 ###############################################
 class ControllerState(object):
-
+    
     # Controls       [ JX,  JY,  A,  B, RB, LB,  Z, CR, CL, CD, CU, DR, DL, DD, DU,  S]
     NO_OP          = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
     START_BUTTON   = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1]
@@ -334,7 +336,7 @@ class ControllerState(object):
     JOYSTICK_DOWN  = [  0, -80,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
     JOYSTICK_LEFT  = [-80,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
     JOYSTICK_RIGHT = [ 80,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-
+    
     def __init__(self, controls=NO_OP):
         self.X_AXIS = controls[0]
         self.Y_AXIS = controls[1]
@@ -352,7 +354,7 @@ class ControllerState(object):
         self.D_DPAD = controls[13]
         self.U_DPAD = controls[14]
         self.START_BUTTON = controls[15]
-
+    
     def to_json(self):
         return json.dumps(self.__dict__)
 
