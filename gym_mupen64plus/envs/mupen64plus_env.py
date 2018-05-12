@@ -45,8 +45,6 @@ class ImageHelper:
 ### Variables & Constants                   ###
 ###############################################
 
-config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "config.yml")))
-
 # The width, height, and depth of the emulator window:
 SCR_W = 640
 SCR_H = 480
@@ -62,8 +60,7 @@ class Mupen64PlusEnv(gym.Env):
     __metaclass__ = abc.ABCMeta
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, sub_config):
-        config.update(sub_config)
+    def __init__(self):
         self.viewer = None
         self.reset_count = 0
         self.step_count = 0
@@ -71,8 +68,13 @@ class Mupen64PlusEnv(gym.Env):
         self.mss_grabber = None
         self.episode_over = False
         self.pixel_array = None
+        self._base_load_config()
+        self._base_validate_config()
         self.controller_server, self.controller_server_thread = self._start_controller_server()
-        self.xvfb_process, self.emulator_process = self._start_emulator(rom_name=config['ROM_NAME'], gfx_plugin=config['GFX_PLUGIN'])
+        self.xvfb_process, self.emulator_process = \
+            self._start_emulator(rom_name=self.config['ROM_NAME'], 
+                                 gfx_plugin=self.config['GFX_PLUGIN'],
+                                 input_driver_path=self.config['INPUT_DRIVER_PATH'])
         with self.controller_server.frame_skip_disabled():
             self._navigate_menu()
 
@@ -96,6 +98,25 @@ class Mupen64PlusEnv(gym.Env):
                                                   [  0,  1], # D-Pad Up Button
                                                   [  0,  1], # Start Button
                                                  ])
+
+    def _base_load_config(self):
+        self.config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "config.yml")))
+        self._load_config()
+
+    @abc.abstractmethod
+    def _load_config(self):
+        return
+
+    def _base_validate_config(self):
+        if 'ROM_NAME' not in self.config:
+            raise AssertionError('ROM_NAME configuration is required')
+        if 'GFX_PLUGIN' not in self.config:
+            raise AssertionError('GFX_PLUGIN configuration is required')
+        self._validate_config()
+
+    @abc.abstractmethod
+    def _validate_config(self):
+        return
 
     def _step(self, action):
         #cprint('Step %i: %s' % (self.step_count, action), 'green')
@@ -122,12 +143,12 @@ class Mupen64PlusEnv(gym.Env):
     def _observe(self):
         #cprint('Observe called!', 'yellow')
 
-        if config['USE_XVFB']:
+        if self.config['USE_XVFB']:
             offset_x = 0
             offset_y = 0
         else:
-            offset_x = config['OFFSET_X']
-            offset_y = config['OFFSET_Y']
+            offset_x = self.config['OFFSET_X']
+            offset_y = self.config['OFFSET_Y']
 
         image_array = \
             np.array(self.mss_grabber.grab({"top": offset_y,
@@ -165,7 +186,7 @@ class Mupen64PlusEnv(gym.Env):
 
     def _render(self, mode='human', close=False):
         if close:
-            if self.viewer is not None:
+            if hasattr(self, 'viewer') and self.viewer is not None:
                 self.viewer.close()
                 self.viewer = None
             return
@@ -174,7 +195,7 @@ class Mupen64PlusEnv(gym.Env):
             return img
         elif mode == 'human':
             from gym.envs.classic_control import rendering
-            if self.viewer is None:
+            if not hasattr(self, 'viewer') or self.viewer is None:
                 self.viewer = rendering.SimpleImageViewer()
             self.viewer.imshow(img)
 
@@ -185,13 +206,13 @@ class Mupen64PlusEnv(gym.Env):
         self._stop_controller_server()
 
     def _start_controller_server(self):
-        server = ControllerHTTPServer(server_address  = ('', config['PORT_NUMBER']),
-                                      control_timeout = config['ACTION_TIMEOUT'],
-                                      frame_skip      = config['FRAME_SKIP']) # TODO: Environment argument (with issue #26)
+        server = ControllerHTTPServer(server_address  = ('', self.config['PORT_NUMBER']),
+                                      control_timeout = self.config['ACTION_TIMEOUT'],
+                                      frame_skip      = self.config['FRAME_SKIP']) # TODO: Environment argument (with issue #26)
         server_thread = threading.Thread(target=server.serve_forever, args=())
         server_thread.daemon = True
         server_thread.start()
-        print('ControllerHTTPServer started on port ', config['PORT_NUMBER'])
+        print('ControllerHTTPServer started on port ', self.config['PORT_NUMBER'])
         return server, server_thread
 
     def _stop_controller_server(self):
@@ -201,11 +222,11 @@ class Mupen64PlusEnv(gym.Env):
 
     def _start_emulator(self,
                         rom_name,
+                        gfx_plugin,
+                        input_driver_path,
                         res_w=SCR_W,
                         res_h=SCR_H,
-                        res_d=SCR_D,
-                        gfx_plugin=config['GFX_PLUGIN'],
-                        input_driver_path=config['INPUT_DRIVER_PATH']):
+                        res_d=SCR_D):
 
         rom_path = os.path.abspath(
             os.path.join(os.path.dirname(inspect.stack()[0][1]),
@@ -223,7 +244,7 @@ class Mupen64PlusEnv(gym.Env):
             cprint(msg, 'red')
             raise Exception(msg)
 
-        cmd = [config['MUPEN_CMD'],
+        cmd = [self.config['MUPEN_CMD'],
                "--nospeedlimit",
                "--resolution",
                "%ix%i" % (res_w, res_h),
@@ -236,19 +257,19 @@ class Mupen64PlusEnv(gym.Env):
         cprint('Initially on DISPLAY %s' % initial_disp, 'red')
 
         xvfb_proc = None
-        if config['USE_XVFB']:
+        if self.config['USE_XVFB']:
             display_num = -1
             success = False
             # If we couldn't find an open display number after 15 attempts, give up
             while not success and display_num <= 15:
                 display_num += 1
-                xvfb_cmd = [config['XVFB_CMD'],
+                xvfb_cmd = [self.config['XVFB_CMD'],
                             ":" + str(display_num),
                             "-screen",
                             "0",
                             "%ix%ix%i" % (res_w, res_h, res_d * 8),
                             "-fbdir",
-                            config['TMP_DIR']]
+                            self.config['TMP_DIR']]
 
                 cprint('Starting xvfb with command: %s' % xvfb_cmd, 'yellow')
 
@@ -272,7 +293,7 @@ class Mupen64PlusEnv(gym.Env):
             cprint('Using DISPLAY %s' % os.environ["DISPLAY"], 'blue')
             cprint('Changed to DISPLAY %s' % os.environ["DISPLAY"], 'red')
 
-            cmd = [config['VGLRUN_CMD'], "-d", ":" + str(display_num)] + cmd
+            cmd = [self.config['VGLRUN_CMD'], "-d", ":" + str(display_num)] + cmd
 
         cprint('Starting emulator with comand: %s' % cmd, 'yellow')
 

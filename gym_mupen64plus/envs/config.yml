@@ -24,7 +24,7 @@ VGLRUN_CMD: vglrun
 MUPEN_CMD: mupen64plus
 
 # The name/path of the video/graphics driver/plugin:
-GFX_PLUGIN: mupen64plus-video-rice
+GFX_PLUGIN: mupen64plus-video-rice.so
 
 # The path to the mupen64plus input driver:
 INPUT_DRIVER_PATH: /usr/local/lib/mupen64plus/mupen64plus-input-bot.so
