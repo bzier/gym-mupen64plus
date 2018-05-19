@@ -32,6 +32,16 @@ Please create issues as you encounter them. Future work and ideas will be captur
     sudo apt-get install mupen64plus
     ```
 
+* VirtualGL- Available at https://sourceforge.net/projects/virtualgl/files/
+    * On RPM based systems, install with
+
+        ```rpm -i VirtualGL*.rpm
+        ```
+    * On Debian based ststems install with
+
+        ```dpkg -i VirtualGL*.deb
+        ```
+
 * mupen64plus-input-bot (these instructions may have changed; the most current are on that project's [page](https://github.com/kevinhughes27/mupen64plus-input-bot))
     ```bash
     #!/bin/bash
@@ -89,7 +99,7 @@ Additionally, each game environment may specify configuration values which will 
 
 ## XVFB
 
-The environment is currently configured to use [XVFB](https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml) by default. This allows the emulator to run behind-the-scenes and simplifies configuration. The config file includes a flag to turn this behavior on/off (see below for details running with the flag turned off). 
+The environment is currently configured to use [XVFB](https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml) by default. This allows the emulator to run behind-the-scenes and simplifies configuration. The config file includes a flag to turn this behavior on/off (see below for details running with the flag turned off).
 
 ### Viewing the emulator in XVFB
 Since the emulator runs off-screen, the environment provides a `render()` call which displays a window with the screen pixels. Each call to `render()` will update this display. For example, an agent can make this call between each `step()`.
