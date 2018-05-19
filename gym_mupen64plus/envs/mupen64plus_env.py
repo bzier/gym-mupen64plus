@@ -172,8 +172,8 @@ class Mupen64PlusEnv(gym.Env):
         if mode == 'rgb_array':
             return img
         elif mode == 'human':
-            from gym.envs.classic_control import rendering
             if self.viewer is None:
+                from gym.envs.classic_control import rendering
                 self.viewer = rendering.SimpleImageViewer()
             self.viewer.imshow(img)
 
@@ -338,6 +338,9 @@ class ControllerState(object):
     B_BUTTON       = [  0,   0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
     RB_BUTTON      = [  0,   0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
     CR_BUTTON      = [  0,   0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0]
+    CL_BUTTON      = [  0,   0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0]
+    CD_BUTTON      = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0]
+    CU_BUTTON      = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0]
     JOYSTICK_UP    = [  0,  80,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
     JOYSTICK_DOWN  = [  0, -80,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
     JOYSTICK_LEFT  = [-80,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
