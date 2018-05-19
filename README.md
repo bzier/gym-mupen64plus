@@ -17,7 +17,7 @@ Please create issues as you encounter them. Future work and ideas will be captur
 
 ### Python Dependencies
 *If you follow the installation steps below, these dependencies will be resolved automatically.*
-* Python 2.7
+* Python 2.7 or Python 3.x (tested in 2.7.13 and 3.6.0)
 * gym
 * numpy
 * PyYAML
