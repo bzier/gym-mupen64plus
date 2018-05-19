@@ -9,17 +9,15 @@ from gym_mupen64plus.envs.mupen64plus_env \
   import Mupen64PlusEnv, ControllerState, IMAGE_HELPER
 import numpy as np
 
-mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "mario_kart_config.yml")))
-
 ###############################################
 class MarioKartEnv(Mupen64PlusEnv):
     __metaclass__ = abc.ABCMeta
 
     # Indicates the color value of the pixel at point (203, 51)
     # This is where the lap number is present in the default HUD
-    LAP_COLOR_MAP = {(214, 156, 222): 1, # Lap 1
-                     (198, 140, 198): 2, # Lap 2
-                     ( 66,  49,  66): 3} # Lap 3
+    END_RACE_PIXEL_COLORS = {"mupen64plus-video-rice.so"       : ( 66,  49,  66),
+                             "mupen64plus-video-glide64mk2.so" : (214, 148, 214),
+                             "mupen64plus-video-glide64.so"    : (157, 112, 158)}
 
     HUD_PROGRESS_COLOR_VALUES = {(000, 000, 255): 1, #   Blue: Lap 1
                                  (255, 255, 000): 2, # Yellow: Lap 2
@@ -44,14 +42,24 @@ class MarioKartEnv(Mupen64PlusEnv):
     def __init__(self, character='mario', course='LuigiRaceway'):
         self._set_character(character)
         self._set_course(course)
-        super(MarioKartEnv, self).__init__(mk_config['ROM_NAME'])
-        self.end_episode_confidence = 0
+        super(MarioKartEnv, self).__init__()
+
+        self.end_race_pixel_color = self.END_RACE_PIXEL_COLORS[self.config["GFX_PLUGIN"]]
         
         self.action_space = spaces.MultiDiscrete([[-80, 80],  # Joystick X-axis
                                                   [-80, 80],  # Joystick Y-axis
                                                   [  0,  1],  # A Button
                                                   [  0,  1],  # B Button
                                                   [  0,  1]]) # RB Button
+
+    def _load_config(self):
+        self.config.update(yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "mario_kart_config.yml"))))
+        
+    def _validate_config(self):
+        print("validate sub")
+        gfx_plugin = self.config["GFX_PLUGIN"]
+        if gfx_plugin not in self.END_RACE_PIXEL_COLORS:
+            raise AssertionError("Video Plugin '" + gfx_plugin + "' not currently supported by MarioKart environment")
 
     def _step(self, action):
         # Interpret the action choice and get the actual controller state for this step
@@ -83,7 +91,6 @@ class MarioKartEnv(Mupen64PlusEnv):
                     self._navigate_map_select()
                     self._wait(count=50, wait_for='race to load')
                     self.episode_over = False
-                    self.end_episode_confidence = 0
                 else:
                     # Can't pause the race until the light turns green
                     if (self.step_count * self.controller_server.frame_skip) < 120:
@@ -236,18 +243,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
     def _evaluate_end_state(self):
         #cprint('Evaluate End State called!','yellow')
-
-        point_a = IMAGE_HELPER.GetPixelColor(self.pixel_array, 203, 51)
-        
-        if point_a in self.LAP_COLOR_MAP:
-            self.end_episode_confidence += 1
-        else:
-            self.end_episode_confidence = 0
-
-        if self.end_episode_confidence > self.END_EPISODE_THRESHOLD:
-            return True
-        else:
-            return False
+        return self.end_race_pixel_color == IMAGE_HELPER.GetPixelColor(self.pixel_array, 203, 51)
 
     def _navigate_menu(self):
         self._wait(count=10, wait_for='Nintendo screen')

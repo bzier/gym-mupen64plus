@@ -94,7 +94,7 @@ pip install -e .
 
 A configuration file ([`config.yml`](gym_mupen64plus/envs/config.yml)) has been provided for the core wrapper where the primary settings are stored. This configuration may vary on your system, so please take a look at the available settings and adjust as necessary.
 
-Additionally, each game environment may specify configuration values which will be stored in a separate config file in the game's specific subdirectory (see each game's README for those details).
+Additionally, each game environment may specify configuration values which will be stored in a separate config file in the game's specific subdirectory (see each game's README for those details). The game environment may also override any of the base config values by specifying the same setting name and passing the loaded config dictionary to the base environment init method.
 
 
 ## XVFB
@@ -150,7 +150,7 @@ The original inspiration for this project has now been updated to take advantage
 
 *Links to ROM files will not be included here. Use your ninja skills as appropriate.*
 
-ROM files can be placed in `./gym_mupen64plus/ROMs/`.
+ROM files should be placed in `./gym_mupen64plus/ROMs/`.
 
 Here is a list of games that have been wrapped. Each game may support multiple 'modes' with different levels or missions configured. See each of the games' pages for more details.
 * [MarioKart64](gym_mupen64plus/envs/MarioKart64/README.md)
