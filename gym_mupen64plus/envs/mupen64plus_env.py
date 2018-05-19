@@ -415,6 +415,7 @@ class ControllerHTTPServer(HTTPServer, object):
     def shutdown(self):
         self.running = False
         super(ControllerHTTPServer, self).shutdown()
+        super(ControllerHTTPServer, self).server_close()
 
     # http://preshing.com/20110920/the-python-with-statement-by-example/#implementing-the-context-manager-as-a-generator
     @contextmanager
