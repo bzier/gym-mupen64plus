@@ -130,11 +130,11 @@ def main():
     env.reset()
     env.render()
 
-    for i in range(88):
+    for i in range(18):
         (obs, rew, end, info) = env.step([0, 0, 0, 0, 0]) # NOOP until green light
         env.render()
 
-    for i in range(100):
+    for i in range(20):
         (obs, rew, end, info) = env.step([0, 0, 1, 0, 0]) # Drive straight
         env.render()
 
