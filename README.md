@@ -89,7 +89,7 @@ Additionally, each game environment may specify configuration values which will 
 
 ## XVFB
 
-The environment is currently configured to use [XVFB](https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml) by default. This allows the emulator to run behind-the-scenes and simplifies configuration. The config file includes a flag to turn this behavior on/off (see below for details running with the flag turned off). 
+The environment is currently configured to use [XVFB](https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml) by default. This allows the emulator to run behind-the-scenes and simplifies configuration. The config file includes a flag to turn this behavior on/off (see below for details running with the flag turned off).
 
 ### Viewing the emulator in XVFB
 Since the emulator runs off-screen, the environment provides a `render()` call which displays a window with the screen pixels. Each call to `render()` will update this display. For example, an agent can make this call between each `step()`.
@@ -115,21 +115,25 @@ A simple example to test if the environment is up-and-running:
 #!/bin/python
 import gym, gym_mupen64plus
 
-env = gym.make('Mario-Kart-Luigi-Raceway-v0')
-env.reset()
-env.render()
-
-for i in range(88):
-    (obs, rew, end, info) = env.step([0, 0, 0, 0, 0]) # NOOP until green light
+def main():
+    env = gym.make('Mario-Kart-Luigi-Raceway-v0')
+    env.reset()
     env.render()
 
-for i in range(100):
-    (obs, rew, end, info) = env.step([0, 0, 1, 0, 0]) # Drive straight
-    env.render()
+    for i in range(88):
+        (obs, rew, end, info) = env.step([0, 0, 0, 0, 0]) # NOOP until green light
+        env.render()
 
-raw_input("Press <enter> to exit... ")
+    for i in range(100):
+        (obs, rew, end, info) = env.step([0, 0, 1, 0, 0]) # Drive straight
+        env.render()
 
-env.close()
+    raw_input("Press <enter> to exit... ")
+
+    env.close()
+
+if __name__ == "__main__":
+    main()
 ```
 
 ### AI Agent:
