@@ -37,7 +37,7 @@ Please create issues as you encounter them. Future work and ideas will be captur
         ```bash
         rpm -i VirtualGL*.rpm
         ```
-    * On Debian based ststems install with
+    * On Debian based systems, install with
         ```bash
         dpkg -i VirtualGL*.deb
         ```
