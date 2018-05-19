@@ -34,12 +34,12 @@ Please create issues as you encounter them. Future work and ideas will be captur
 
 * VirtualGL- Available at https://sourceforge.net/projects/virtualgl/files/
     * On RPM based systems, install with
-
-        ```rpm -i VirtualGL*.rpm
+        ```bash
+        rpm -i VirtualGL*.rpm
         ```
     * On Debian based ststems install with
-
-        ```dpkg -i VirtualGL*.deb
+        ```bash
+        dpkg -i VirtualGL*.deb
         ```
 
 * mupen64plus-input-bot (these instructions may have changed; the most current are on that project's [page](https://github.com/kevinhughes27/mupen64plus-input-bot))
