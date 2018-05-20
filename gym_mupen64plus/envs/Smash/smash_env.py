@@ -187,17 +187,17 @@ class SmashEnv(Mupen64PlusEnv):
         print('Agent player (row, col): ', self._my_char_pos)
         print('Opponent player (row, col): ', self._their_char_pos)
         # Enable computer opponent.
-        self._press_button(ControllerState.JOYSTICK_HARDUP, times=5)
-        self._press_button(ControllerState.JOYSTICK_HARDRIGHT, times=13)
+        self._press_button(ControllerState.JOYSTICK_UP, times=5)
+        self._press_button(ControllerState.JOYSTICK_RIGHT, times=13)
         self._press_button(ControllerState.A_BUTTON)
         # Set computer opponent's level.
-        self._press_button(ControllerState.JOYSTICK_HARDDOWN, times=10)
-        self._press_button(ControllerState.JOYSTICK_HARDRIGHT, times=2)
+        self._press_button(ControllerState.JOYSTICK_DOWN, times=10)
+        self._press_button(ControllerState.JOYSTICK_RIGHT, times=2)
         if self._opponent_bot_level > 3:
             self._press_button(ControllerState.A_BUTTON,
                                times=self._opponent_bot_level - 3)
         elif self._opponent_bot_level < 3:
-            self._press_button(ControllerState.JOYSTICK_HARDLEFT, times=8)
+            self._press_button(ControllerState.JOYSTICK_LEFT, times=8)
             self._press_button(ControllerState.A_BUTTON,
                                times=3 - self._opponent_bot_level)
         # Set player 1 to a default position- doesn't matter where, as long as
@@ -227,29 +227,29 @@ class SmashEnv(Mupen64PlusEnv):
 
     def _select_player(self, pos, color):
         # Ensure we are in the upper left corner.
-        self._press_button(ControllerState.JOYSTICK_HARDUP, times=35)
-        self._press_button(ControllerState.JOYSTICK_HARDLEFT, times=45)
+        self._press_button(ControllerState.JOYSTICK_UP, times=35)
+        self._press_button(ControllerState.JOYSTICK_LEFT, times=45)
 
         # Navigate to character
-        self._press_button(ControllerState.JOYSTICK_HARDDOWN,
+        self._press_button(ControllerState.JOYSTICK_DOWN,
                           times=5 + 7 * pos[0])
-        self._press_button(ControllerState.JOYSTICK_HARDRIGHT,
+        self._press_button(ControllerState.JOYSTICK_RIGHT,
                            times=5 + 7 * pos[1])
         self._press_button(color)
 
     def _select_player_from(self, start_pos, pos, color):
         # Navigate to character
         if pos[0] > start_pos[0]:
-            self._press_button(ControllerState.JOYSTICK_HARDDOWN,
+            self._press_button(ControllerState.JOYSTICK_DOWN,
                                times=7 * (pos[0] - start_pos[0]))
         elif pos[0] < start_pos[0]:
-            self._press_button(ControllerState.JOYSTICK_HARDUP,
+            self._press_button(ControllerState.JOYSTICK_UP,
                                times=7 * (start_pos[0] - pos[0]))
         if pos[1] > start_pos[1]:
-            self._press_button(ControllerState.JOYSTICK_HARDRIGHT,
+            self._press_button(ControllerState.JOYSTICK_RIGHT,
                                times=7 * (pos[1] - start_pos[1]))
         elif pos[1] < start_pos[1]:
-            self._press_button(ControllerState.JOYSTICK_HARDLEFT,
+            self._press_button(ControllerState.JOYSTICK_LEFT,
                                times=7 * (start_pos[1] - pos[1]))
         self._press_button(color)
 
