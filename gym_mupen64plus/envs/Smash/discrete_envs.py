@@ -7,7 +7,7 @@ def _create_action_map():
         ("HARDNEG", [-120]),
         ("MIDNEG",  [-60]),
         ("NEUTRAL", [0]),
-        ("MIDPOS", [60]),
+        ("MIDPOS",  [60]),
         ("HARDPOS", [120]),
     ]
     # Button orders are A, B, RB, LB, Z, CR
