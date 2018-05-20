@@ -371,7 +371,7 @@ class ControllerState(object):
     JOYSTICK_HARDUP    = [  0,  127, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
     JOYSTICK_HARDDOWN  = [  0, -128, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
     JOYSTICK_HARDLEFT  = [-128,   0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-    JOYSTICK_HARDRIGHT = [ 127,   0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]\
+    JOYSTICK_HARDRIGHT = [ 127,   0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
 
     def __init__(self, controls=NO_OP):
         self.X_AXIS = controls[0]
