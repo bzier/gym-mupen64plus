@@ -55,7 +55,7 @@ class SmashEnv(Mupen64PlusEnv):
                 self._my_char_color != self._their_char_color)
         self._set_map(map)
 
-        super(SmashEnv, self).__init__(mk_config['ROM_NAME'])
+        super(SmashEnv, self).__init__()
         self._action_space = spaces.MultiDiscrete([[-128, 127],  # Joystick X
                                                    [-128, 127],  # Joystick Y
                                                    [  0,  1],    # A
@@ -276,13 +276,11 @@ class SmashEnv(Mupen64PlusEnv):
         return False
 
     def _load_config(self):
-        self.config.update(yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "smash.yml"))))
+        self.config.update(yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "smash_config.yml"))))
 
     def _validate_config(self):
         print("validate sub")
         gfx_plugin = self.config["GFX_PLUGIN"]
-        if gfx_plugin not in self.END_RACE_PIXEL_COLORS:
-            raise AssertionError("Video Plugin '" + gfx_plugin + "' not currently supported by Smash environment")
 
     def _set_characters(self, my_character, their_character):
         characters = {'luigi'       : (0, 0),
