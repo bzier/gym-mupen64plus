@@ -4,11 +4,11 @@ from gym import spaces
 
 def _create_action_map():
     joystick_magnitudes = [
-        ("MIDNEG", [-40]),
-        ("HARDNEG", [-80]),
+        ("HARDNEG", [-120]),
+        ("MIDNEG",  [-60]),
         ("NEUTRAL", [0]),
-        ("MIDPOS", [40]),
-        ("HARDPOS", [80]),
+        ("MIDPOS", [60]),
+        ("HARDPOS", [120]),
     ]
     # Button orders are A, B, RB, LB, Z, CR
     allowed_buttons = [

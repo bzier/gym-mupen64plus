@@ -56,14 +56,14 @@ class SmashEnv(Mupen64PlusEnv):
         self._set_map(map)
 
         super(SmashEnv, self).__init__(mk_config['ROM_NAME'])
-        self._action_space = spaces.MultiDiscrete([[-80, 80],  # Joystick X-axis
-                                                   [-80, 80],  # Joystick Y-axis
-                                                   [  0,  1],  # A
-                                                   [  0,  1],  # B
-                                                   [  0,  0],  # RB- unused
-                                                   [  0,  1],  # LB
-                                                   [  0,  1],  # Z
-                                                   [  0,  1]]) # C
+        self._action_space = spaces.MultiDiscrete([[-128, 127],  # Joystick X
+                                                   [-128, 127],  # Joystick Y
+                                                   [  0,  1],    # A
+                                                   [  0,  1],    # B
+                                                   [  0,  0],    # RB- unused
+                                                   [  0,  1],    # LB
+                                                   [  0,  1],    # Z
+                                                   [  0,  1]])   # C
 
     def _step(self, action):
         self._set_damages()
