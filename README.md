@@ -17,7 +17,7 @@ Please create issues as you encounter them. Future work and ideas will be captur
 
 ### Python Dependencies
 *If you follow the installation steps below, these dependencies will be resolved automatically.*
-* Python 2.7
+* Python 2.7 or Python 3.x (tested in 2.7.13 and 3.6.0)
 * gym
 * numpy
 * PyYAML
@@ -31,6 +31,16 @@ Please create issues as you encounter them. Future work and ideas will be captur
     #!/bin/bash
     sudo apt-get install mupen64plus
     ```
+
+* VirtualGL- Available at https://sourceforge.net/projects/virtualgl/files/
+    * On RPM based systems, install with
+        ```bash
+        rpm -i VirtualGL*.rpm
+        ```
+    * On Debian based systems, install with
+        ```bash
+        dpkg -i VirtualGL*.deb
+        ```
 
 * mupen64plus-input-bot (these instructions may have changed; the most current are on that project's [page](https://github.com/kevinhughes27/mupen64plus-input-bot))
     ```bash
@@ -84,12 +94,12 @@ pip install -e .
 
 A configuration file ([`config.yml`](gym_mupen64plus/envs/config.yml)) has been provided for the core wrapper where the primary settings are stored. This configuration may vary on your system, so please take a look at the available settings and adjust as necessary.
 
-Additionally, each game environment may specify configuration values which will be stored in a separate config file in the game's specific subdirectory (see each game's README for those details).
+Additionally, each game environment may specify configuration values which will be stored in a separate config file in the game's specific subdirectory (see each game's README for those details). The game environment may also override any of the base config values by specifying the same setting name and passing the loaded config dictionary to the base environment init method.
 
 
 ## XVFB
 
-The environment is currently configured to use [XVFB](https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml) by default. This allows the emulator to run behind-the-scenes and simplifies configuration. The config file includes a flag to turn this behavior on/off (see below for details running with the flag turned off). 
+The environment is currently configured to use [XVFB](https://www.x.org/archive/X11R7.6/doc/man/man1/Xvfb.1.xhtml) by default. This allows the emulator to run behind-the-scenes and simplifies configuration. The config file includes a flag to turn this behavior on/off (see below for details running with the flag turned off).
 
 ### Viewing the emulator in XVFB
 Since the emulator runs off-screen, the environment provides a `render()` call which displays a window with the screen pixels. Each call to `render()` will update this display. For example, an agent can make this call between each `step()`.
@@ -115,21 +125,25 @@ A simple example to test if the environment is up-and-running:
 #!/bin/python
 import gym, gym_mupen64plus
 
-env = gym.make('Mario-Kart-Luigi-Raceway-v0')
-env.reset()
-env.render()
-
-for i in range(88):
-    (obs, rew, end, info) = env.step([0, 0, 0, 0, 0]) # NOOP until green light
+def main():
+    env = gym.make('Mario-Kart-Luigi-Raceway-v0')
+    env.reset()
     env.render()
 
-for i in range(100):
-    (obs, rew, end, info) = env.step([0, 0, 1, 0, 0]) # Drive straight
-    env.render()
+    for i in range(18):
+        (obs, rew, end, info) = env.step([0, 0, 0, 0, 0]) # NOOP until green light
+        env.render()
 
-raw_input("Press <enter> to exit... ")
+    for i in range(20):
+        (obs, rew, end, info) = env.step([0, 0, 1, 0, 0]) # Drive straight
+        env.render()
 
-env.close()
+    raw_input("Press <enter> to exit... ")
+
+    env.close()
+
+if __name__ == '__main__':
+    main()
 ```
 
 ### AI Agent:
@@ -140,7 +154,7 @@ The original inspiration for this project has now been updated to take advantage
 
 *Links to ROM files will not be included here. Use your ninja skills as appropriate.*
 
-ROM files can be placed in `./gym_mupen64plus/ROMs/`.
+ROM files should be placed in `./gym_mupen64plus/ROMs/`.
 
 Here is a list of games that have been wrapped. Each game may support multiple 'modes' with different levels or missions configured. See each of the games' pages for more details.
 * [MarioKart64](gym_mupen64plus/envs/MarioKart64/README.md)
