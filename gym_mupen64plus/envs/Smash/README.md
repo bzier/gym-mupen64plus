@@ -20,11 +20,37 @@ A configuration file ([`smash_config.yml`](smash_config.yml)) has been provided 
         * There is a reward for taunting.
         * There is a penalty for going too long without giving or taking damage, or taunting.
 
+    * `_evaluate_end_state()` Always returns false for now. Assumes an infinite run time.
 
-    * `_evaluate_end_state()` Always returns false for now.
-
-    * `_reset()` resets to begin a new match. Mostly unimplemented for now.
+    * `_reset()` resets to begin a new match. Assumes an infinite run time.
 
 ### Action Space:
 
 For the definitions of possible discrete actions, see `discrete_envs.py`
+
+### Sample Script:
+
+You can run the following script to confirm everything is working:
+
+```python
+#!/bin/python
+import gym, gym_mupen64plus
+
+def main():
+    env = gym.make('Smash-mario-v0')
+    env.reset()
+    env.render()
+    for i in range(1000):
+        # Taunt.
+        (obs, rew, end, info) = env.step([0, 0, 0, 0, 0, 1, 0, 0])
+        (obs, rew, end, info) = env.step([0, 0, 0, 0, 0, 0, 0, 0])
+        env.render()
+
+    #env.render()
+    raw_input("Press <enter> to exit... ")
+
+    env.close()
+
+if __name__ == "__main__":
+    main()
+```

@@ -11,6 +11,12 @@ import numpy as np
 
 mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "smash_config.yml")))
 
+
+# TODO: Read this from a config?
+FRAMES_PER_SECOND = 60
+FRAMES_PER_UPDATE = 1
+UPDATES_PER_SECOND = FRAMES_PER_SECOND / float(FRAMES_PER_UPDATE)
+
 ###############################################
 class SmashEnv(Mupen64PlusEnv):
     """Environment for Super Smash Bros.
@@ -37,17 +43,13 @@ class SmashEnv(Mupen64PlusEnv):
 
     # TODO: Add pixel info to figure out health of agent and opponent.
 
-    # TODO: Read this from a config?
-    FRAMES_PER_SECOND = 60
-    FRAMES_PER_UPDATE = 1
-    UPDATES_PER_SECOND = FRAMES_PER_SECOND / float(FRAMES_PER_UPDATE)
-
     def __init__(
-            self, my_character='pikachu', their_character='luigi',
+            self, my_character='pikachu', their_character='jigglypuff',
             my_character_color='CUP', their_character_color='CLEFT',
-            map='DreamLand'):
+            opponent_bot_level=10, map='DreamLand'):
         self._set_characters(my_character, their_character)
         self._set_characters_color(my_character_color, their_character_color)
+        self._opponent_bot_level = opponent_bot_level
         # Agent and opponent cannot be the same character and color.
         assert (self._my_char_pos != self._their_char_pos or
                 self._my_char_color != self._their_char_color)
@@ -72,7 +74,7 @@ class SmashEnv(Mupen64PlusEnv):
             self._is_taunting = False
         num_missing = len(ControllerState.A_BUTTON) - len(action)
         full_action = action + [0] * num_missing
-        return super(SmashEnv, self)._step(controls)
+        return super(SmashEnv, self)._step(full_action)
 
     def _reset(self):
         self._curr_frame = 0
@@ -148,51 +150,123 @@ class SmashEnv(Mupen64PlusEnv):
 
     def _navigate_start_menus(self):
         # TODO: Implement.
-        self._wait(count=10, wait_for='HAL Screen')
-
+        self._wait(count=150, wait_for='HAL Screen')
+        self._press_button(ControllerState.START_BUTTON)
+        self._wait(count=150, wait_for='Splash Screen')
+        self._press_button(ControllerState.START_BUTTON)
+        self._wait(count=30, wait_for='Load Main Menu')
+        # Select Versus Mode
+        self._press_button(ControllerState.JOYSTICK_DOWN)
+        self._press_button(ControllerState.START_BUTTON)
+        # Set time to infinity
+        self._wait(count=30, wait_for='Load VS Menu')
+        self._press_button(ControllerState.JOYSTICK_DOWN)
+        self._press_button(ControllerState.JOYSTICK_DOWN)
+        self._press_button(ControllerState.JOYSTICK_LEFT)
+        self._press_button(ControllerState.JOYSTICK_LEFT)
+        self._press_button(ControllerState.JOYSTICK_LEFT)
+        # Turn off items.
+        self._press_button(ControllerState.JOYSTICK_DOWN)
+        self._press_button(ControllerState.START_BUTTON)
+        self._wait(count=30, wait_for='Load Options Menu')
+        self._press_button(ControllerState.JOYSTICK_UP)
+        self._press_button(ControllerState.START_BUTTON)
+        self._wait(count=30, wait_for='Load Items Menu')
+        self._press_button(ControllerState.JOYSTICK_LEFT)
+        self._press_button(ControllerState.JOYSTICK_LEFT)
+        self._press_button(ControllerState.JOYSTICK_LEFT)
+        self._press_button(ControllerState.B_BUTTON)
+        self._wait(count=30, wait_for='Back From Items Menu')
+        self._press_button(ControllerState.B_BUTTON)
+        self._wait(count=30, wait_for='Back From Options Menu')
+        self._press_button(ControllerState.JOYSTICK_DOWN)
+        self._press_button(ControllerState.START_BUTTON)
+        self._wait(count=125, wait_for='Load Character Screen')
 
     def _navigate_player_select(self):
         print('Agent player (row, col): ', self._my_char_pos)
         print('Opponent player (row, col): ', self._their_char_pos)
-        self._select_player(self._my_char_pos, self._my_char_color)
+        # Enable computer opponent.
+        self._press_button(ControllerState.JOYSTICK_HARDUP, times=5)
+        self._press_button(ControllerState.JOYSTICK_HARDRIGHT, times=13)
+        self._press_button(ControllerState.A_BUTTON)
+        # Set computer opponent's level.
+        self._press_button(ControllerState.JOYSTICK_HARDDOWN, times=10)
+        self._press_button(ControllerState.JOYSTICK_HARDRIGHT, times=2)
+        if self._opponent_bot_level > 3:
+            self._press_button(ControllerState.A_BUTTON,
+                               times=self._opponent_bot_level - 3)
+        elif self._opponent_bot_level < 3:
+            self._press_button(ControllerState.JOYSTICK_HARDLEFT, times=8)
+            self._press_button(ControllerState.A_BUTTON,
+                               times=3 - self._opponent_bot_level)
+        # Set player 1 to a default position- doesn't matter where, as long as
+        # it's not the same as the default CP, or the desired CP.
+        default_p1 = (0, 1)
+        if default_p1 == self._their_char_pos:
+            default_p1 = (1, 0)
+        self._select_player(default_p1, self._my_char_color)
+        self._wait(count=20, wait_for='P1 Selected')
+        # Grab default CP button- should be at Yoshi. Note if the settings
+        # above change, this may change as well.
+        default_cp = (0, 0)
+        self._select_player_from(default_p1, default_cp,
+                                 ControllerState.A_BUTTON)
+        self._wait(count=20, wait_for='CP Grabbed')
+        self._select_player_from(default_cp, self._their_char_pos,
+                                 self._their_char_color)
+        self._wait(count=20, wait_for='CP Selected')
+        # Set player 1 for real.
+        self._press_button(ControllerState.B_BUTTON)
+        self._wait(count=30, wait_for='P1 Unselected')
+        self._select_player_from(self._their_char_pos, self._my_char_pos,
+                                 self._my_char_color)
 
-        # TODO: Select computer for opponent.
-        # TODO: Allow custom opponent level.
-        self._select_player(self._their_char_pos, self._their_char_color)
         self._press_button(ControllerState.START_BUTTON)
+        self._wait(count=75, wait_for='Load Map Select')
 
     def _select_player(self, pos, color):
         # Ensure we are in the upper left corner.
-        self._press_button(ControllerState.JOYSTICK_UP, times=100)
-        self._press_button(ControllerState.JOYSTICK_LEFT, times=100)
+        self._press_button(ControllerState.JOYSTICK_HARDUP, times=35)
+        self._press_button(ControllerState.JOYSTICK_HARDLEFT, times=45)
 
-        # TODO: Tune this.
-        down_offset = 10
-        right_offset = 10
-        down_multip = 10
-        right_multip = 10
         # Navigate to character
-        self._press_button(ControllerState.JOYSTICK_DOWN,
-                          times=down_offset + down_multip * pos[1])
-        self._press_button(ControllerState.JOYSTICK_RIGHT,
-                           times=right_offset + right_multip * pos[0])
+        self._press_button(ControllerState.JOYSTICK_HARDDOWN,
+                          times=5 + 7 * pos[0])
+        self._press_button(ControllerState.JOYSTICK_HARDRIGHT,
+                           times=5 + 7 * pos[1])
+        self._press_button(color)
+
+    def _select_player_from(self, start_pos, pos, color):
+        # Navigate to character
+        if pos[0] > start_pos[0]:
+            self._press_button(ControllerState.JOYSTICK_HARDDOWN,
+                               times=7 * (pos[0] - start_pos[0]))
+        elif pos[0] < start_pos[0]:
+            self._press_button(ControllerState.JOYSTICK_HARDUP,
+                               times=7 * (start_pos[0] - pos[0]))
+        if pos[1] > start_pos[1]:
+            self._press_button(ControllerState.JOYSTICK_HARDRIGHT,
+                               times=7 * (pos[1] - start_pos[1]))
+        elif pos[1] < start_pos[1]:
+            self._press_button(ControllerState.JOYSTICK_HARDLEFT,
+                               times=7 * (start_pos[1] - pos[1]))
         self._press_button(color)
 
 
     def _navigate_map_select(self):
         print('Map position: ', self._map_pos)
 
-        # Navigate to upper left corner if necessary.
-        self._press_button(ControllerState.JOYSTICK_LEFT, times=5)
-        self._press_button(ControllerState.JOYSTICK_UP, times=1)
-
         # Select map.
-        self._press_button(ControllerState.JOYSTICK_RIGHT,
-                           times=self._map_pos[0])
-        self._press_button(ControllerState.JOYSTICK_DOWN,
-                           times=self._map_pos[1])
+        for i in range(self._map_pos[1]):
+            self._press_button(ControllerState.JOYSTICK_RIGHT)
+            self._wait(count=15, wait_for='Move Map Select Right')
+        for i in range(self._map_pos[0]):
+            self._press_button(ControllerState.JOYSTICK_DOWN)
+            self._wait(count=15, wait_for='Move Map Select Down')
         # Press start.
         self._press_button(ControllerState.START_BUTTON)
+        self._wait(count=200, wait_for='Load Level')
 
     def _navigate_pause_screen(self):
         # TODO: Possibly implement, if we want to allow exiting the map.
