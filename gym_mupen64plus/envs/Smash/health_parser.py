@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import os.path
 
 
 _HEIGHT = 38
@@ -8,7 +9,9 @@ _HEIGHT = 38
 # using the same OpenCV method as below, but were picked as especially clean
 # examples, ideal for comparisons.
 def initialize_character_pixels_from_files():
-    percent_pixels = np.asarray(cv2.imread('outlines/percent.png'))
+    full_path = os.path.dirname(__file__)
+    fname = os.path.join(full_path, 'outlines/percent.png')
+    percent_pixels = np.asarray(cv2.imread(fname))
     percent_pixels = np.squeeze(percent_pixels[:, :, 0:1])
     percent_pixels = percent_pixels == 0  # True if black, False if white.
     assert len(percent_pixels) == _HEIGHT
@@ -16,7 +19,8 @@ def initialize_character_pixels_from_files():
     digit_to_pixels = []
 
     for i in range(10):
-        digit_pixels =  np.asarray(cv2.imread('outlines/%d.png' % i))
+        fname = os.path.join(full_path, 'outlines/%d.png' % i)
+        digit_pixels =  np.asarray(cv2.imread(fname))
         digit_pixels = np.squeeze(digit_pixels[:, :, 0:1])
         digit_pixels = digit_pixels == 0  # True if black, False if white.
         assert len(digit_pixels) == _HEIGHT
