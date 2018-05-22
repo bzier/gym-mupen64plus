@@ -70,7 +70,6 @@ class SmashEnv(Mupen64PlusEnv):
                                                    [  0,  1]])   # C
 
     def _step(self, action):
-        self._set_damages()
         # Append unneeded inputs.
         if action[5] == 1:
             self._is_taunting = True
