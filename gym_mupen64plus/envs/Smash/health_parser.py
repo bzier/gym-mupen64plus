@@ -25,13 +25,14 @@ def initialize_character_pixels_from_files():
 
 PERCENT_PIXELS, DIGIT_TO_PIXELS = initialize_character_pixels_from_files()
 
-# Returns the index and score of the best match of digit_pixels in
+# Returns the pixel index and score of the best match of digit_pixels in
 # health_pixels. We start looking with the leftmost pixels of digit_pixels
 # at start_pixel, and stop when those leftmost pixels reach stop_pixel.
+# If it doesn't find a match, returns a negative pixel index.
 def _find_match(digit_pixels, health_pixels, start_pixel, stop_pixel, dig = -1):
     mask_len = len(digit_pixels[0])
     inc_or_dec = 1 if stop_pixel > start_pixel else -1
-    best_score = 0.0
+    best_score = -1e9
     best_idx = -1
     for i in range(start_pixel, stop_pixel, inc_or_dec):
         if i < 0 or i + mask_len > len(health_pixels[0]):
@@ -46,28 +47,33 @@ def _find_match(digit_pixels, health_pixels, start_pixel, stop_pixel, dig = -1):
             best_idx = i
     return (best_idx, best_score)
 
+# Uses OpenCV to get the outline of the score. Returned as a boolean array:
+# True if the image is black, False if it is white.
+def _get_score_outline_from_pixels(player_num, pixels):
+    assert player_num == 1 or player_num == 2
+    # Slice the pixels so we are only looking at the health area of the screen.
+    x_pixel_range = (50, 173) if player_num == 1 else (190, 313)
+    x_len = x_pixel_range[1] - x_pixel_range[0]
+    y_pixel_range = (400, 400 + _HEIGHT)
+    pixels = pixels[y_pixel_range[0]:y_pixel_range[1],
+                    x_pixel_range[0]:x_pixel_range[1], :]
+    assert len(pixels) == _HEIGHT
+    # Use OpenCV to find the outlines of the numbers in black and white.
+    bw = cv2.cvtColor(pixels, cv2.COLOR_BGR2GRAY)
+    thresh = cv2.adaptiveThreshold(bw, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                   cv2.THRESH_BINARY, 3, 2)
+    dilated = cv2.dilate(thresh, np.ones((2,2), np.uint8), iterations = 1)
+    return dilated == 0  # True where the pixels are black, False where white.
+
 # Given the player number (1 and 2) and a screenshot of the game,
 # return the health of the player. Returns a pair. The first value returned is
 # the health if it is detected, or else -1. The second value returned is
 # an error string if the health isn't detected, or else the empty string.
 def GetHealth(player_num, pixels):
-    assert player_num == 1 or player_num == 2
-    # Range we look at the score.
-    x_pixel_range = (50, 173) if player_num == 1 else (190, 313)
-    x_len = x_pixel_range[1] - x_pixel_range[0]
-    y_pixel_range = (400, 400 + _HEIGHT)
-    health_pixels = pixels[y_pixel_range[0]:y_pixel_range[1],
-                           x_pixel_range[0]:x_pixel_range[1],
-                           :]
-    assert len(health_pixels) == _HEIGHT
-    # Use OpenCV to find the outlines of the numbers in black and white.
-    bw = cv2.cvtColor(health_pixels, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.adaptiveThreshold(bw, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                   cv2.THRESH_BINARY, 3, 2)
-    pixels = cv2.dilate(thresh, np.ones((2,2), np.uint8), iterations = 1)
-    pixels = pixels == 0  # True where the pixels are black, False where white.
-    # First find the %, and work left from there.
+    pixels = _get_score_outline_from_pixels(player_num, pixels)
     percent_len = len(PERCENT_PIXELS[0])
+    x_len = len(pixels[1])
+    # First find the %, and work left from there.
     # X range below hand tuned to properly find the % in the smallest case (1%)
     # and the largest 3 digit cases.
     percent_match = _find_match(PERCENT_PIXELS, pixels, x_len / 2 - 11,
