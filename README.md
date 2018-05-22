@@ -32,6 +32,11 @@ Please create issues as you encounter them. Future work and ideas will be captur
     sudo apt-get install mupen64plus
     ```
 
+* OpenCV - needed for Super Smash Bros only
+    ```bash
+    sudo apt-get install python-opencv
+    ```
+
 * VirtualGL- Available at https://sourceforge.net/projects/virtualgl/files/
     * On RPM based systems, install with
         ```bash
@@ -158,7 +163,7 @@ ROM files should be placed in `./gym_mupen64plus/ROMs/`.
 
 Here is a list of games that have been wrapped. Each game may support multiple 'modes' with different levels or missions configured. See each of the games' pages for more details.
 * [MarioKart64](gym_mupen64plus/envs/MarioKart64/README.md)
-
+* [Super Smash Bros](gym_mupen64plus/envs/Smash/README.md)
 
 ## Architecture
 
