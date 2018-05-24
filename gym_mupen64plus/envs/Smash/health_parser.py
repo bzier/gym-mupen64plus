@@ -69,10 +69,14 @@ def _get_score_outline_from_pixels(player_num, pixels):
     dilated = cv2.dilate(thresh, np.ones((2,2), np.uint8), iterations = 1)
     return dilated == 0  # True where the pixels are black, False where white.
 
+SUCCESS = 0
+PERCENT_UDETECTED = 1  # Couldn't detect the % character.
+DIGIT_AFTER_PERCENT_UNDETECTED = 2  # Couldn't detect any digits after the % character.
+
 # Given the player number (1 and 2) and a screenshot of the game,
 # return the health of the player. Returns a pair. The first value returned is
 # the health if it is detected, or else -1. The second value returned is
-# an error string if the health isn't detected, or else the empty string.
+# an error code, one of the three above.
 def GetHealth(player_num, pixels):
     pixels = _get_score_outline_from_pixels(player_num, pixels)
     percent_len = len(PERCENT_PIXELS[0])
@@ -83,7 +87,7 @@ def GetHealth(player_num, pixels):
     percent_match = _find_match(PERCENT_PIXELS, pixels, x_len / 2 - 11,
                                 x_len - percent_len)
     if percent_match[0] == -1:
-        return (-1, "Couldn't find %")
+        return (-1, PERCENT_UDETECTED)
     start_match_px = percent_match[0]
     multiplier = 1
     digits_found = 0
@@ -111,11 +115,11 @@ def GetHealth(player_num, pixels):
             digits_found += best_digit * multiplier
             start_match_px = best_digit_match[0]
         elif i == 0:
-            return (-1, "Couldn't find first digit after %")
+            return (-1, DIGIT_AFTER_PERCENT_UNDETECTED)
         else:
             break
         multiplier *= 10
-    return (digits_found, "")
+    return (digits_found, SUCCESS)
 
 def main():  # Can be run as a test on the screenshots_below
     # Screenshots with health identified correctly.

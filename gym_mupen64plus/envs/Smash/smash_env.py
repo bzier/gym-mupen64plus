@@ -9,6 +9,7 @@ from gym_mupen64plus.envs.mupen64plus_env \
   import Mupen64PlusEnv, ControllerState, IMAGE_HELPER
 import numpy as np
 import health_parser
+import damage_tracker
 
 mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "smash_config.yml")))
 
@@ -43,14 +44,12 @@ class SmashEnv(Mupen64PlusEnv):
     __metaclass__ = abc.ABCMeta
 
     def __init__(
-            self, my_character='pikachu', their_character='jigglypuff',
+            self, my_character='pikachu', their_character='dk',
             my_character_color='CUP', their_character_color='CLEFT',
             opponent_bot_level=10, map='DreamLand'):
         # TODO: Make player number configurable in the future.
-        self._my_curr_dmg = 0
-        self._their_curr_dmg = 0
-        self._my_player_num = 1
-        self._their_player_num = 2
+        self._my_damage_tracker = damage_tracker.DamageTracker(playernum=1)
+        self._their_damage_tracker = damage_tracker.DamageTracker(playernum=2)
         self._set_characters(my_character, their_character)
         self._set_characters_color(my_character_color, their_character_color)
         self._opponent_bot_level = opponent_bot_level
@@ -80,14 +79,10 @@ class SmashEnv(Mupen64PlusEnv):
         return super(SmashEnv, self)._step(full_action)
 
     def _reset(self):
-        self._my_previous_dmg_measurements = [-1, -1, -1]
-        self._their_previous_dmg_measurements = [-1, -1, -1]
+        self._my_damage_tracker = damage_tracker.DamageTracker(playernum=1)
+        self._their_damage_tracker = damage_tracker.DamageTracker(playernum=2)
         self._curr_frame = 0
         self._last_dmg_frame = 0
-        self._my_curr_dmg = 0
-        self._their_curr_dmg = 0
-        self. _my_prev_dmg = 0
-        self._their_prev_dmg = 0
         self._is_taunting = False
 
         # Nothing to do on the first call to reset()
@@ -112,57 +107,34 @@ class SmashEnv(Mupen64PlusEnv):
 
     def _observe(self):
         pixels = super(SmashEnv, self)._observe()
-        my_dmg_observation, _ = health_parser.GetHealth(self._my_player_num, pixels)
-        their_dmg_observation, _ = health_parser.GetHealth(self._their_player_num, pixels)
-        # TODO: Refactor this logic into its own class.
-        if my_dmg_observation >= 0 and (
-              my_dmg_observation > self._my_curr_dmg or
-              my_dmg_observation == 0):
-            self._my_previous_dmg_measurements.append(my_dmg_observation)
-            self._my_previous_dmg_measurements.pop(0)
-            if (self._my_previous_dmg_measurements[0] == self._my_previous_dmg_measurements[1] and
-                self._my_previous_dmg_measurements[0] == my_dmg_observation and
-                my_dmg_observation != self._my_curr_dmg):
-                # _prev_damage is updated in the reward function.
-                self._my_curr_dmg = my_dmg_observation
-        if their_dmg_observation >= 0 and (
-              their_dmg_observation > self._their_curr_dmg or
-              their_dmg_observation == 0):
-            self._their_previous_dmg_measurements.append(their_dmg_observation)
-            self._their_previous_dmg_measurements.pop(0)
-            if (self._their_previous_dmg_measurements[0] == self._their_previous_dmg_measurements[1] and
-                self._their_previous_dmg_measurements[0] == their_dmg_observation and
-                their_dmg_observation != self._their_curr_dmg):
-                # _prev_damage is updated in the reward function.
-                self._their_curr_dmg = their_dmg_observation
+        self._my_damage_tracker.observe_damage(pixels)
+        self._their_damage_tracker.observe_damage(pixels)
         return pixels
 
     def _render(self, mode='human', close=False):
-        print "my_dmg, their_dmg =", self._my_curr_dmg, self._their_curr_dmg
+        print "my_dmg, their_dmg =",
+        print self._my_damage_tracker.get_curr_damage(),
+        print self._their_damage_tracker.get_curr_damage()
         return super(SmashEnv, self)._render(mode, close)
 
     def _get_dmg_reward(self):
         dmg_factor = 1.0
         death_factor = 200.0
         reward = 0.0
-        dmg_taken = self._my_curr_dmg - self._my_prev_dmg
-        dmg_given = self._their_curr_dmg - self._their_prev_dmg
-        if dmg_taken > 0:
-            reward -= dmg_taken * dmg_factor
-        if dmg_given > 0:
-            reward += dmg_given * dmg_factor
-        # If the total damage resets to 0, it means a death happened.
-        # TODO: This doesn't work in Saffron City, or if healing items are
-        # enabled. Kind of a corner case though, and not relevant to
-        # competitive, where only Dream Land is played with no items.
-        if dmg_taken < 0 and self._my_curr_dmg == 0:
+        me_died, my_dmg_taken = (
+            self._my_damage_tracker.get_death_and_delta_dmg_for_reward())
+        they_died, their_dmg_taken = (
+            self._their_damage_tracker.get_death_and_delta_dmg_for_reward())
+        if my_dmg_taken > 0:
+            reward -= my_dmg_taken * dmg_factor
+        if their_dmg_taken > 0:
+            reward += their_dmg_taken * dmg_factor
+        if me_died:
             reward -= death_factor
-        if dmg_given < 0 and self._their_curr_dmg == 0:
+        if they_died:
             reward += death_factor
-        if dmg_taken != 0 or dmg_given != 0:
+        if (me_died or they_died or my_dmg_taken != 0 or their_dmg_taken != 0):
             self._last_dmg_frame = self._curr_frame
-        self._my_prev_dmg = self._my_curr_dmg
-        self._their_prev_dmg = self._their_curr_dmg
         return reward
 
     def _get_taunt_reward(self):
@@ -175,6 +147,7 @@ class SmashEnv(Mupen64PlusEnv):
     def _get_reward(self):
         rew = (self._get_taunt_reward() + self._get_dmg_reward() +
                self._get_aggressiveness_penalty())
+        return rew
 
     def _navigate_menu(self):
         self._navigate_start_menus()
