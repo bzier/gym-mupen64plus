@@ -103,7 +103,7 @@ class SmashEnv(Mupen64PlusEnv):
         # Apply if we've gone 4 seconds without any damage.
         if frames_since_dmg > 4 * FRAMES_PER_SECOND:
             # Penalty is tuned to be equal to taking 1 damage every 1 second.
-            return 1.0 / UPDATES_PER_SECOND
+            return -1.0 / UPDATES_PER_SECOND
         return 0.0
 
     def _observe(self):
