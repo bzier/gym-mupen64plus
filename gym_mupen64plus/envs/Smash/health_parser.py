@@ -8,7 +8,7 @@ _HEIGHT = 38
 # Read ideal outlines of characters from saved files. These were generated
 # using the same OpenCV method as below, but were picked as especially clean
 # examples, ideal for comparisons.
-def initialize_character_pixels_from_files():
+def _initialize_character_pixels_from_files():
     full_path = os.path.dirname(__file__)
     fname = os.path.join(full_path, 'outlines/percent.png')
     percent_pixels = np.asarray(cv2.imread(fname))
@@ -27,7 +27,7 @@ def initialize_character_pixels_from_files():
         digit_to_pixels.append(digit_pixels)
     return (percent_pixels, digit_to_pixels)
 
-PERCENT_PIXELS, DIGIT_TO_PIXELS = initialize_character_pixels_from_files()
+PERCENT_PIXELS, DIGIT_TO_PIXELS = _initialize_character_pixels_from_files()
 
 # Returns the pixel index and score of the best match of digit_pixels in
 # health_pixels. We start looking with the leftmost pixels of digit_pixels
@@ -56,7 +56,7 @@ def _find_match(digit_pixels, health_pixels, start_pixel, stop_pixel, dig = -1):
 def _get_score_outline_from_pixels(player_num, pixels):
     assert player_num == 1 or player_num == 2
     # Slice the pixels so we are only looking at the health area of the screen.
-    x_pixel_range = (50, 173) if player_num == 1 else (190, 313)
+    x_pixel_range = (49, 174) if player_num == 1 else (189, 314)
     x_len = x_pixel_range[1] - x_pixel_range[0]
     y_pixel_range = (400, 400 + _HEIGHT)
     pixels = pixels[y_pixel_range[0]:y_pixel_range[1],
