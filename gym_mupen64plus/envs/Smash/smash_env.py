@@ -69,6 +69,7 @@ class SmashEnv(Mupen64PlusEnv):
                                                    [  0,  1]])   # C
 
     def _step(self, action):
+        self._curr_frame += FRAMES_PER_UPDATE
         # Append unneeded inputs.
         if action[5] == 1:
             self._is_taunting = True
