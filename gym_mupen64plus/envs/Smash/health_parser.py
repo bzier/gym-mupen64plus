@@ -56,7 +56,7 @@ def _find_match(digit_pixels, health_pixels, start_pixel, stop_pixel, dig = -1):
 def _get_score_outline_from_pixels(player_num, pixels):
     assert player_num == 1 or player_num == 2
     # Slice the pixels so we are only looking at the health area of the screen.
-    x_pixel_range = (49, 174) if player_num == 1 else (189, 314)
+    x_pixel_range = (45, 178) if player_num == 1 else (185, 318)
     x_len = x_pixel_range[1] - x_pixel_range[0]
     y_pixel_range = (400, 400 + _HEIGHT)
     pixels = pixels[y_pixel_range[0]:y_pixel_range[1],
@@ -82,9 +82,8 @@ def GetHealth(player_num, pixels):
     percent_len = len(PERCENT_PIXELS[0])
     x_len = len(pixels[1])
     # First find the %, and work left from there.
-    # X range below hand tuned to properly find the % in the smallest case (1%)
-    # and the largest 3 digit cases.
-    percent_match = _find_match(PERCENT_PIXELS, pixels, x_len / 2 - 11,
+    # X range below hand tuned to properly find the % in the smallest case (1%).
+    percent_match = _find_match(PERCENT_PIXELS, pixels, x_len / 2 - 9,
                                 x_len - percent_len)
     if percent_match[0] == -1:
         return (-1, PERCENT_UDETECTED)
@@ -143,9 +142,11 @@ def main():  # Can be run as a test on the screenshots_below
                 total += 1
                 if health == -1:
                     no_val_returned += 1
+                    print screenshot_fname, "error =", error
                 elif health == h:
                     correct += 1
                 else:
+                    print screenshot_fname, "incorrect health =", health
                     # If health increases too much, or decreases to a nonzero
                     # value, this is easy to identify in gameplay.
                     if health > 40 + h or (health < h and health != 0):
