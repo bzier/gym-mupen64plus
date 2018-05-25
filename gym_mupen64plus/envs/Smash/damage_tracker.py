@@ -14,9 +14,10 @@ class DamageTracker(object):
         self._has_processed_death = False
         self._met_percent_threshold = False
         self._nonzeroes_detected_in_row = 0
+        self._health_parser = health_parser.HealthParser()
 
     def observe_damage(self, pixels):
-        dmg_observation, error = health_parser.GetHealth(
+        dmg_observation, error = self._health_parser.GetHealth(
             self._playernum, pixels)
         if error == health_parser.SUCCESS:
             assert dmg_observation >= 0 and dmg_observation <= 999
