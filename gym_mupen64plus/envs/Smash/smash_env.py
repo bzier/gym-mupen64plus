@@ -138,16 +138,8 @@ class SmashEnv(Mupen64PlusEnv):
             self._last_dmg_frame = self._curr_frame
         return reward
 
-    def _get_taunt_reward(self):
-        if self._is_taunting:
-            # This does emotional damage.
-            self._last_dmg_frame = self._curr_frame
-            return 1.0
-        return 0.0
-
     def _get_reward(self):
-        rew = (self._get_taunt_reward() + self._get_dmg_reward() +
-               self._get_aggressiveness_penalty())
+        rew = self._get_dmg_reward() + self._get_aggressiveness_penalty()
         return rew
 
     def _navigate_menu(self):
