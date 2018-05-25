@@ -8,6 +8,8 @@ _HEIGHT = 38
 SUCCESS = 0
 PERCENT_UDETECTED = 1  # Couldn't detect the % character.
 DIGIT_AFTER_PERCENT_UNDETECTED = 2  # Couldn't detect any digits after the % character.
+ZERO_NOT_RIGHT_COLOR = 3  # We detected 0, but it was unexpectedly dark, so
+                          # we likely just missed some digits to its left.
 
 # Read ideal outlines of characters from saved files. These were generated
 # using the same OpenCV method as below, but were picked as especially clean
@@ -34,6 +36,10 @@ def _initialize_character_pixels_from_files():
 PERCENT_PIXELS, DIGIT_TO_PIXELS = _initialize_character_pixels_from_files()
 
 class HealthParser(object):
+    def __init__(self):
+        # Records the color of the inside of 0 when health is 0%.
+        self._zero_pixel = None
+
     # Returns the pixel index and score of the best match of digit_pixels in
     # health_pixels. We start looking with the leftmost pixels of digit_pixels
     # at start_pixel, and stop when those leftmost pixels reach stop_pixel.
@@ -57,16 +63,20 @@ class HealthParser(object):
                 best_idx = i
         return (best_idx, best_score)
 
+    # Slice the pixels to contain only the section which contains the
+    # health.
+    def _get_health_screen_section(self, player_num, pixels):
+        x_pixel_range = (45, 178) if player_num == 1 else (185, 318)
+        y_pixel_range = (400, 400 + _HEIGHT)
+        return pixels[y_pixel_range[0]:y_pixel_range[1],
+                      x_pixel_range[0]:x_pixel_range[1], :]
+
     # Uses OpenCV to get the outline of the score. Returned as a boolean array:
     # True if the image is black, False if it is white.
     def _get_score_outline_from_pixels(self, player_num, pixels):
         assert player_num == 1 or player_num == 2
-        # Slice the pixels so we are only looking at the health area of the screen.
-        x_pixel_range = (45, 178) if player_num == 1 else (185, 318)
-        x_len = x_pixel_range[1] - x_pixel_range[0]
-        y_pixel_range = (400, 400 + _HEIGHT)
-        pixels = pixels[y_pixel_range[0]:y_pixel_range[1],
-                        x_pixel_range[0]:x_pixel_range[1], :]
+        pixels = self._get_health_screen_section(player_num, pixels)
+        x_len = len(pixels[0])
         assert len(pixels) == _HEIGHT
         # Use OpenCV to find the outlines of the numbers in black and white.
         bw = cv2.cvtColor(pixels, cv2.COLOR_BGR2GRAY)
@@ -75,12 +85,28 @@ class HealthParser(object):
         dilated = cv2.dilate(thresh, np.ones((2,2), np.uint8), iterations = 1)
         return dilated == 0  # True where the pixels are black, False where white.
 
+    # The first time we detect a zero, record its inner pixels. Later, we
+    # can determine whether a zero is a true zero or not based on whether
+    # it is the correct color.
+    def _set_zero_pixel(self, player_num, screen, zero_x_idx):
+        pixels = self._get_health_screen_section(player_num, screen)
+        self._zero_pixel = pixels[32][13 + zero_x_idx]
+
+    # If the zero pixel doesn't match the first pixel we recorded, it is
+    # not a true zero- we missed some digits.
+    def _is_zero_reasonable(self, player_num, screen, zero_x_idx):
+        pixels = self._get_health_screen_section(player_num, screen)
+        zero_pixel = pixels[32][13 + zero_x_idx]
+        if np.any(zero_pixel != self._zero_pixel):
+            return False
+        return True
+
     # Given the player number (1 and 2) and a screenshot of the game,
     # return the health of the player. Returns a pair. The first value returned is
     # the health if it is detected, or else -1. The second value returned is
     # an error code, one of the three above.
-    def GetHealth(self, player_num, pixels):
-        pixels = self._get_score_outline_from_pixels(player_num, pixels)
+    def GetHealth(self, player_num, screen):
+        pixels = self._get_score_outline_from_pixels(player_num, screen)
         percent_len = len(PERCENT_PIXELS[0])
         x_len = len(pixels[1])
         # First find the %, and work left from there.
@@ -92,6 +118,7 @@ class HealthParser(object):
         start_match_px = percent_match[0]
         multiplier = 1
         digits_found = 0
+        first_digit_x = -1
         # Search for up to 3 digits. Look to the left of the most recently found
         # character.
         for i in range(3):  # Need to find potentially 3 digits.
@@ -112,6 +139,8 @@ class HealthParser(object):
                 if digit_match[1] > best_digit_match[1]:
                     best_digit_match = digit_match
                     best_digit = digit
+                    if i == 0:
+                        first_digit_x = best_digit_match[0]
             if best_digit_match[0] >= 0:
                 digits_found += best_digit * multiplier
                 start_match_px = best_digit_match[0]
@@ -120,6 +149,12 @@ class HealthParser(object):
             else:
                 break
             multiplier *= 10
+        if self._zero_pixel is None and digits_found == 0:
+            self._set_zero_pixel(player_num, screen, first_digit_x)
+        elif (digits_found == 0 and
+              not self._is_zero_reasonable(player_num, screen,
+                                           first_digit_x)):
+            return (-1, ZERO_NOT_RIGHT_COLOR)
         return (digits_found, SUCCESS)
 
 def main():  # Can be run as a test on the screenshots_below
