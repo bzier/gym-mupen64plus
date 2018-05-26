@@ -72,7 +72,7 @@ class Mupen64PlusEnv(gym.Env):
         self._base_validate_config()
         self.controller_server, self.controller_server_thread = self._start_controller_server()
         self.xvfb_process, self.emulator_process = \
-            self._start_emulator(rom_name=self.config['ROM_NAME'], 
+            self._start_emulator(rom_name=self.config['ROM_NAME'],
                                  gfx_plugin=self.config['GFX_PLUGIN'],
                                  input_driver_path=self.config['INPUT_DRIVER_PATH'])
         with self.controller_server.frame_skip_disabled():
@@ -194,8 +194,8 @@ class Mupen64PlusEnv(gym.Env):
         if mode == 'rgb_array':
             return img
         elif mode == 'human':
-            from gym.envs.classic_control import rendering
             if not hasattr(self, 'viewer') or self.viewer is None:
+                from gym.envs.classic_control import rendering
                 self.viewer = rendering.SimpleImageViewer()
             self.viewer.imshow(img)
 
@@ -246,6 +246,7 @@ class Mupen64PlusEnv(gym.Env):
 
         cmd = [self.config['MUPEN_CMD'],
                "--nospeedlimit",
+               "--nosaveoptions",
                "--resolution",
                "%ix%i" % (res_w, res_h),
                "--gfx", gfx_plugin,
@@ -353,19 +354,22 @@ class EmulatorMonitor:
 
 ###############################################
 class ControllerState(object):
-    
-    # Controls       [ JX,  JY,  A,  B, RB, LB,  Z, CR, CL, CD, CU, DR, DL, DD, DU,  S]
-    NO_OP          = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-    START_BUTTON   = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1]
-    A_BUTTON       = [  0,   0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-    B_BUTTON       = [  0,   0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-    RB_BUTTON      = [  0,   0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-    CR_BUTTON      = [  0,   0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0]
-    JOYSTICK_UP    = [  0,  80,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-    JOYSTICK_DOWN  = [  0, -80,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-    JOYSTICK_LEFT  = [-80,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-    JOYSTICK_RIGHT = [ 80,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
-    
+
+    # Controls           [ JX,  JY,  A,  B, RB, LB,  Z, CR, CL, CD, CU, DR, DL, DD, DU,  S]
+    NO_OP              = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    START_BUTTON       = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1]
+    A_BUTTON           = [  0,   0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    B_BUTTON           = [  0,   0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    RB_BUTTON          = [  0,   0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    CR_BUTTON          = [  0,   0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0]
+    CL_BUTTON          = [  0,   0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0]
+    CD_BUTTON          = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0]
+    CU_BUTTON          = [  0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0]
+    JOYSTICK_UP        = [  0,  127, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_DOWN      = [  0, -128, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_LEFT      = [-128,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+    JOYSTICK_RIGHT     = [ 127,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
+
     def __init__(self, controls=NO_OP):
         self.X_AXIS = controls[0]
         self.Y_AXIS = controls[1]
@@ -383,7 +387,7 @@ class ControllerState(object):
         self.D_DPAD = controls[13]
         self.U_DPAD = controls[14]
         self.START_BUTTON = controls[15]
-    
+
     def to_json(self):
         return json.dumps(self.__dict__)
 
