@@ -29,6 +29,7 @@ def _create_action_map():
     # These actions shouldn't be combined with joystick directions.
     actions.append(("GRAB",  [0, 0, 1, 0, 0, 0, 1, 0]))
     actions.append(("TAUNT", [0, 0, 0, 0, 0, 1, 0, 0]))
+    return actions
 
 class DiscreteActions:
     ACTION_MAP = _create_action_map()
@@ -46,8 +47,14 @@ class SmashDiscreteEnv(SmashEnv):
 
     ENABLE_CHECKPOINTS = True
 
-    def __init__(self, character='mario', course='LuigiRaceway'):
-        super(MarioKartDiscreteEnv, self).__init__(character=character, course=course)
+    def __init__(self, my_character='pikachu', their_character='dk',
+                 my_character_color='CUP', their_character_color='CLEFT',
+                 opponent_bot_level=10, map='DreamLand'):
+        super(SmashDiscreteEnv, self).__init__(
+            my_character=my_character, their_character=their_character,
+            my_character_color=my_character_color,
+            their_character_color=their_character_color,
+            opponent_bot_level=opponent_bot_level, map=map)
 
         # This needs to happen after the parent class init to effectively override the action space
         self.action_space = DiscreteActions.get_action_space()
@@ -56,4 +63,4 @@ class SmashDiscreteEnv(SmashEnv):
         # Interpret the action choice and get the actual controller state for this step
         controls = DiscreteActions.get_controls_from_action(action)
 
-        return super(MarioKartDiscreteEnv, self)._step(controls)
+        return super(SmashDiscreteEnv, self)._step(controls)
