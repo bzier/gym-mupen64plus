@@ -246,6 +246,7 @@ class Mupen64PlusEnv(gym.Env):
 
         cmd = [self.config['MUPEN_CMD'],
                "--nospeedlimit",
+               "--nosaveoptions",
                "--resolution",
                "%ix%i" % (res_w, res_h),
                "--gfx", gfx_plugin,

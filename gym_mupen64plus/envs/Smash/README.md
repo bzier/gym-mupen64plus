@@ -6,6 +6,10 @@ This page describes the Super Smash Bros environment(s).
 
 A configuration file ([`smash_config.yml`](smash_config.yml)) has been provided for this game. Currently the only configuration setting is `ROM_PATH`. This setting must specify the full path to the Super Smash Bros ROM on your system.
 
+Additionally, make sure you either have all items and levels unlocked in your save file, or copy smash.sra (included
+in this directory) to your Mupen64 Super Smash Bros save file, likely
+~/.local/share/mupen64plus/save/Super\ Smash\ Bros.\ \(U\)\ \[\!\].sra
+
 ## Implementation Details
 
 ### `SmashEnv`:
