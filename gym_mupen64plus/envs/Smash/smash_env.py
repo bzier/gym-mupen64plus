@@ -8,8 +8,8 @@ from gym import spaces
 from gym_mupen64plus.envs.mupen64plus_env \
   import Mupen64PlusEnv, ControllerState, IMAGE_HELPER
 import numpy as np
-import health_parser
-import damage_tracker
+from gym_mupen64plus.envs.Smash \
+  import health_parser, damage_tracker
 
 mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "smash_config.yml")))
 
@@ -27,11 +27,8 @@ class SmashEnv(Mupen64PlusEnv):
     Attributes:
         _curr_frame: int, the current frame
         _last_dmg_frame: int, the last frame we took damage
-        _my_curr_dmg: int, the current health of the agent.
-        _their_curr_dmg: int, the health of the opponent.
-        _my_prev_dmg: int, the health of the agent at the previous update.
-        _their_prev_dmg: int, the health of the opponent at the previous update.
-        _is_taunting: bool, whether the agent just taunted.
+        _my_damage_tracker: DamageTracker for the agent's character.
+        _their_damage_tracker: DamageTracker for the opponent's character.
         _my_char_pos: (int, int), the (row, col) of agent character in the
             selection screen.
         _their_char_pos: (int, int), the (row, col) of opponent character in the
@@ -59,22 +56,18 @@ class SmashEnv(Mupen64PlusEnv):
         self._set_map(map)
 
         super(SmashEnv, self).__init__()
-        self._action_space = spaces.MultiDiscrete([[-128, 127],  # Joystick X
-                                                   [-128, 127],  # Joystick Y
-                                                   [  0,  1],    # A
-                                                   [  0,  1],    # B
-                                                   [  0,  0],    # RB- unused
-                                                   [  0,  1],    # LB
-                                                   [  0,  1],    # Z
-                                                   [  0,  1]])   # C
+        self.action_space = spaces.MultiDiscrete([[-128, 127],  # Joystick X
+                                                  [-128, 127],  # Joystick Y
+                                                  [  0,  1],    # A
+                                                  [  0,  1],    # B
+                                                  [  0,  0],    # RB- unused
+                                                  [  0,  1],    # LB
+                                                  [  0,  1],    # Z
+                                                  [  0,  1]])   # C
 
     def _step(self, action):
         self._curr_frame += FRAMES_PER_UPDATE
         # Append unneeded inputs.
-        if action[5] == 1:
-            self._is_taunting = True
-        else:
-            self._is_taunting = False
         num_missing = len(ControllerState.A_BUTTON) - len(action)
         full_action = action + [0] * num_missing
         return super(SmashEnv, self)._step(full_action)
@@ -84,7 +77,6 @@ class SmashEnv(Mupen64PlusEnv):
         self._their_damage_tracker = damage_tracker.DamageTracker(playernum=2)
         self._curr_frame = 0
         self._last_dmg_frame = 0
-        self._is_taunting = False
 
         # Nothing to do on the first call to reset()
         if self.reset_count > 0:
@@ -106,12 +98,6 @@ class SmashEnv(Mupen64PlusEnv):
             return -1.0 / UPDATES_PER_SECOND
         return 0.0
 
-    def _observe(self):
-        pixels = super(SmashEnv, self)._observe()
-        self._my_damage_tracker.observe_damage(pixels)
-        self._their_damage_tracker.observe_damage(pixels)
-        return pixels
-
     def _render(self, mode='human', close=False):
         print "my_dmg, their_dmg =",
         print self._my_damage_tracker.get_curr_damage(),
@@ -119,6 +105,8 @@ class SmashEnv(Mupen64PlusEnv):
         return super(SmashEnv, self)._render(mode, close)
 
     def _get_dmg_reward(self):
+        self._my_damage_tracker.observe_damage(self.pixel_array)
+        self._their_damage_tracker.observe_damage(self.pixel_array)
         dmg_factor = 1.0
         death_factor = 200.0
         reward = 0.0
@@ -264,7 +252,7 @@ class SmashEnv(Mupen64PlusEnv):
             self._wait(count=15, wait_for='Move Map Select Down')
         # Press start.
         self._press_button(ControllerState.START_BUTTON)
-        self._wait(count=200, wait_for='Load Level')
+        self._wait(count=500, wait_for='Load Level')
 
     def _navigate_pause_screen(self):
         # TODO: Possibly implement, if we want to allow exiting the map.

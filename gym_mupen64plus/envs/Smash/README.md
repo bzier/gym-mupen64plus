@@ -1,4 +1,4 @@
-# MarioKart64 Environment
+# Super Smash Bros Environment
 
 This page describes the Super Smash Bros environment(s).
 
@@ -50,7 +50,6 @@ def main():
         (obs, rew, end, info) = env.step([0, 0, 0, 0, 0, 0, 0, 0])
         env.render()
 
-    #env.render()
     raw_input("Press <enter> to exit... ")
 
     env.close()

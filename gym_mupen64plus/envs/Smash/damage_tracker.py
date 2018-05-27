@@ -1,4 +1,5 @@
-import health_parser
+from gym_mupen64plus.envs.Smash \
+  import health_parser
 
 _NUM_DMGS_TO_DETECT = 3  # How many times we need to detect a health to update.
 
@@ -25,24 +26,17 @@ class DamageTracker(object):
         # Whether to report death to reward function on next update.
         self._has_processed_death = False
         # Whether we have met the _MISSING_PERCENTS_IN_ROW_THRESHOLD
-        # and thus can process a depth and resetting the health to 0%.
+        # and thus can process a death and resetting the health to 0%.
         self._met_percent_threshold = False
-        # Used to reset the _met_percent_threshold above if we see too
-        # many nonzeroes.
-        self._nonzeroes_detected_in_row = 0
 
     # Record a damage observation from the screen.
     def observe_damage(self, screen):
-        dmg_observation, error = self._health_parser.GetHealth(
-            self._playernum, screen)
+        dmg_observation, error = self._health_parser.GetHealth(self._playernum, screen)
         if error == health_parser.SUCCESS:
             assert dmg_observation >= 0 and dmg_observation <= 999
             # Reset this counter, since we have detected a % sign.
             self._missing_percents_in_row = 0
-            if dmg_observation == 0:
-                self._nonzeroes_detected_in_row = 0
-            else:
-                self._nonzeroes_detected_in_row += 1
+            if dmg_observation != 0:
                 if self._recent_damages[-1] != 0:
                     # Detected two nonzeroes in a row. There likely
                     # wasn't an actual death, so reset
@@ -60,8 +54,8 @@ class DamageTracker(object):
             # 3) The health is nonzero, or we have met the number of
             #    nondetected % threshold.
             if (num_match_measurements == _NUM_DMGS_TO_DETECT and
-                (dmg_observation == 0 or dmg_observation >= self._curr_dmg) and
-                (dmg_observation != 0 or self._met_percent_threshold)):
+                ((dmg_observation != 0 and dmg_observation >= self._curr_dmg) or
+                 (dmg_observation == 0 and self._met_percent_threshold))):
                 old_dmg = self._curr_dmg
                 self._curr_dmg = dmg_observation
                 if dmg_observation == 0:
@@ -72,7 +66,7 @@ class DamageTracker(object):
                     # to be accounted for, potentially by setting it below
                     # 0.
                     self._dmg_at_last_reward -= old_dmg
-        elif error ==  health_parser.PERCENT_UDETECTED:
+        elif error ==  health_parser.PERCENT_UNDETECTED:
             # We couldn't detect a % character. If this happens a lot,
             # it means the character likely died.
             self._missing_percents_in_row += 1

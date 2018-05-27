@@ -6,7 +6,7 @@ import os.path
 _HEIGHT = 38
 
 SUCCESS = 0
-PERCENT_UDETECTED = 1  # Couldn't detect the % character.
+PERCENT_UNDETECTED = 1  # Couldn't detect the % character.
 DIGIT_AFTER_PERCENT_UNDETECTED = 2  # Couldn't detect any digits after the % character.
 ZERO_NOT_RIGHT_COLOR = 3  # We detected 0, but it was unexpectedly dark, so
                           # we likely just missed some digits to its left.
@@ -112,9 +112,9 @@ class HealthParser(object):
         # First find the %, and work left from there.
         # X range below hand tuned to properly find the % in the smallest case (1%).
         percent_match = self._find_match(
-            PERCENT_PIXELS, pixels, x_len / 2 - 9, x_len - percent_len)
+            PERCENT_PIXELS, pixels, x_len // 2 - 9, x_len - percent_len)
         if percent_match[0] == -1:
-            return (-1, PERCENT_UDETECTED)
+            return (-1, PERCENT_UNDETECTED)
         start_match_px = percent_match[0]
         multiplier = 1
         digits_found = 0
@@ -189,13 +189,13 @@ def main():  # Can be run as a test on the screenshots_below
                     else:
                         incorrect_hard_to_identify += 1
     t = float(total) * 0.01
-    print "Correct values: %d, %0.2f%%" % (correct, correct / t)
-    print "No value returned:  %d, %0.2f%%" % (
-        no_val_returned, no_val_returned / t)
-    print "Incorrect, but easy to account for in game: %d, %0.2f%%" % (
-        incorrect_easy_to_identify, incorrect_easy_to_identify / t)
-    print "Incorrect, harder to identify in game %d, %0.2f%%:" % (
-        incorrect_hard_to_identify, incorrect_hard_to_identify / t)
+    print("Correct values: %d, %0.2f%%" % (correct, correct / t))
+    print("No value returned:  %d, %0.2f%%" % (
+        no_val_returned, no_val_returned / t))
+    print("Incorrect, but easy to account for in game: %d, %0.2f%%" % (
+        incorrect_easy_to_identify, incorrect_easy_to_identify / t))
+    print("Incorrect, harder to identify in game %d, %0.2f%%:" % (
+        incorrect_hard_to_identify, incorrect_hard_to_identify / t))
 
 if __name__ == '__main__':
     main()
