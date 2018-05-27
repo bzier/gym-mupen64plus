@@ -35,25 +35,25 @@ def _initialize_character_pixels_from_files():
 
 PERCENT_PIXELS, DIGIT_TO_PIXELS = _initialize_character_pixels_from_files()
 
-class HealthParser(object):
+class DamageParser(object):
     def __init__(self):
-        # Records the color of the inside of 0 when health is 0%.
+        # Records the color of the inside of 0 when damage is 0%.
         self._zero_pixel = None
 
     # Returns the pixel index and score of the best match of digit_pixels in
-    # health_pixels. We start looking with the leftmost pixels of digit_pixels
+    # damage_pixels. We start looking with the leftmost pixels of digit_pixels
     # at start_pixel, and stop when those leftmost pixels reach stop_pixel.
     # If it doesn't find a match, returns a negative pixel index.
-    def _find_match(self, digit_pixels, health_pixels, start_pixel,
+    def _find_match(self, digit_pixels, damage_pixels, start_pixel,
                     stop_pixel):
         mask_len = len(digit_pixels[0])
         inc_or_dec = 1 if stop_pixel > start_pixel else -1
         best_score = -1e9
         best_idx = -1
         for i in range(start_pixel, stop_pixel, inc_or_dec):
-            if i < 0 or i + mask_len > len(health_pixels[0]):
+            if i < 0 or i + mask_len > len(damage_pixels[0]):
                 continue
-            cut_pixels = health_pixels[:, i:i + mask_len]
+            cut_pixels = damage_pixels[:, i:i + mask_len]
             intersection = np.sum(np.logical_and(digit_pixels, cut_pixels))
             union = np.sum(np.logical_or(digit_pixels, cut_pixels))
 
@@ -64,18 +64,18 @@ class HealthParser(object):
         return (best_idx, best_score)
 
     # Slice the pixels to contain only the section which contains the
-    # health.
-    def _get_health_screen_section(self, player_num, pixels):
+    # damage.
+    def _get_damage_screen_section(self, player_num, pixels):
         x_pixel_range = (45, 178) if player_num == 1 else (185, 318)
         y_pixel_range = (400, 400 + _HEIGHT)
         return pixels[y_pixel_range[0]:y_pixel_range[1],
                       x_pixel_range[0]:x_pixel_range[1], :]
 
-    # Uses OpenCV to get the outline of the score. Returned as a boolean array:
+    # Uses OpenCV to get the outline of the damage. Returned as a boolean array:
     # True if the image is black, False if it is white.
-    def _get_score_outline_from_pixels(self, player_num, pixels):
+    def _get_damage_outline_from_pixels(self, player_num, pixels):
         assert player_num == 1 or player_num == 2
-        pixels = self._get_health_screen_section(player_num, pixels)
+        pixels = self._get_damage_screen_section(player_num, pixels)
         x_len = len(pixels[0])
         assert len(pixels) == _HEIGHT
         # Use OpenCV to find the outlines of the numbers in black and white.
@@ -89,24 +89,24 @@ class HealthParser(object):
     # can determine whether a zero is a true zero or not based on whether
     # it is the correct color.
     def _set_zero_pixel(self, player_num, screen, zero_x_idx):
-        pixels = self._get_health_screen_section(player_num, screen)
+        pixels = self._get_damage_screen_section(player_num, screen)
         self._zero_pixel = pixels[32][13 + zero_x_idx]
 
     # If the zero pixel doesn't match the first pixel we recorded, it is
     # not a true zero- we missed some digits.
     def _is_zero_reasonable(self, player_num, screen, zero_x_idx):
-        pixels = self._get_health_screen_section(player_num, screen)
+        pixels = self._get_damage_screen_section(player_num, screen)
         zero_pixel = pixels[32][13 + zero_x_idx]
         if np.any(zero_pixel != self._zero_pixel):
             return False
         return True
 
     # Given the player number (1 and 2) and a screenshot of the game,
-    # return the health of the player. Returns a pair. The first value returned is
-    # the health if it is detected, or else -1. The second value returned is
+    # return the damage of the player. Returns a pair. The first value returned is
+    # the damage if it is detected, or else -1. The second value returned is
     # an error code, one of the three above.
-    def GetHealth(self, player_num, screen):
-        pixels = self._get_score_outline_from_pixels(player_num, screen)
+    def GetDamage(self, player_num, screen):
+        pixels = self._get_damage_outline_from_pixels(player_num, screen)
         percent_len = len(PERCENT_PIXELS[0])
         x_len = len(pixels[1])
         # First find the %, and work left from there.
@@ -158,7 +158,7 @@ class HealthParser(object):
         return (digits_found, SUCCESS)
 
 def main():  # Can be run as a test on the screenshots_below
-    # Screenshots with health identified correctly.
+    # Screenshots with damage identified correctly.
     correct = 0
     # Screenshots which returned no value.
     no_val_returned = 0
@@ -170,21 +170,21 @@ def main():  # Can be run as a test on the screenshots_below
     incorrect_hard_to_identify = 0
     total = 0
     for p in [1, 2]:
-        for h in range(0, 999):
-            screenshot_fname = "screenshots/p%d_health_%03d.png" % (p, h)
+        for d in range(0, 1000):
+            screenshot_fname = "screenshots/p%d_health_%03d.png" % (p, d)
             img = cv2.imread(screenshot_fname)
             if img is not None:
                 pixels = np.asarray(img)
-                health, error = HealthParser().GetHealth(p, pixels)
+                damage, error = DamageParser().GetDamage(p, pixels)
                 total += 1
-                if health == -1:
+                if damage == -1:
                     no_val_returned += 1
-                elif health == h:
+                elif damage == d:
                     correct += 1
                 else:
-                    # If health increases too much, or decreases to a nonzero
+                    # If damage increases too much, or decreases to a nonzero
                     # value, this is easy to identify in gameplay.
-                    if health > 40 + h or (health < h and health != 0):
+                    if damage > 40 + d or (damage < d and damage != 0):
                         incorrect_easy_to_identify += 1
                     else:
                         incorrect_hard_to_identify += 1

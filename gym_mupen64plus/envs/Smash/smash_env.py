@@ -9,7 +9,7 @@ from gym_mupen64plus.envs.mupen64plus_env \
   import Mupen64PlusEnv, ControllerState, IMAGE_HELPER
 import numpy as np
 from gym_mupen64plus.envs.Smash \
-  import health_parser, damage_tracker
+  import damage_parser, damage_tracker
 
 mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "smash_config.yml")))
 
