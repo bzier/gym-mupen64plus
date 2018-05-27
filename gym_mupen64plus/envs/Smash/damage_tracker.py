@@ -54,9 +54,11 @@ class DamageTracker(object):
                 d == dmg_observation for d in self._recent_damages)
             # We can update the score if the following conditions are met:
             # 1) We have _NUM_DMGS_TO_DETECT consistent observations
-            # 2) The score increased, or reset to zero
-            # 3) The health is nonzero, or we have met the number of
-            #    nondetected % threshold.
+            # 2)
+            #   a) The health is nonzero and the score increased
+            # OR
+            #   b) Health reset to zero and we have met the number of
+            #      nondetected % threshold.
             if (num_match_measurements == _NUM_DMGS_TO_DETECT and
                 ((dmg_observation != 0 and dmg_observation >= self._curr_dmg) or
                  (dmg_observation == 0 and self._met_percent_threshold))):
