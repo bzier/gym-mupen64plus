@@ -70,6 +70,7 @@ class Mupen64PlusEnv(gym.Env):
         self.pixel_array = None
         self._base_load_config()
         self._base_validate_config()
+        self.frame_skip = self.config['FRAME_SKIP']
         self.controller_server, self.controller_server_thread = self._start_controller_server()
         self.xvfb_process, self.emulator_process = \
             self._start_emulator(rom_name=self.config['ROM_NAME'],
@@ -208,7 +209,7 @@ class Mupen64PlusEnv(gym.Env):
     def _start_controller_server(self):
         server = ControllerHTTPServer(server_address  = ('', self.config['PORT_NUMBER']),
                                       control_timeout = self.config['ACTION_TIMEOUT'],
-                                      frame_skip      = self.config['FRAME_SKIP']) # TODO: Environment argument (with issue #26)
+                                      frame_skip      = self.frame_skip) # TODO: Environment argument (with issue #26)
         server_thread = threading.Thread(target=server.serve_forever, args=())
         server_thread.daemon = True
         server_thread.start()

@@ -13,11 +13,7 @@ from gym_mupen64plus.envs.Smash \
 
 mk_config = yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "smash_config.yml")))
 
-
-# TODO: Read this from a config?
 FRAMES_PER_SECOND = 60
-FRAMES_PER_UPDATE = 1
-UPDATES_PER_SECOND = FRAMES_PER_SECOND / float(FRAMES_PER_UPDATE)
 
 ###############################################
 class SmashEnv(Mupen64PlusEnv):
@@ -25,8 +21,7 @@ class SmashEnv(Mupen64PlusEnv):
 
     Allows custom stage and characters for self and opponents.
     Attributes:
-        _curr_frame: int, the current frame
-        _last_dmg_frame: int, the last frame we took damage
+        _last_dmg_step: int, the last step we took damage
         _my_damage_tracker: DamageTracker for the agent's character.
         _their_damage_tracker: DamageTracker for the opponent's character.
         _my_char_pos: (int, int), the (row, col) of agent character in the
@@ -45,8 +40,6 @@ class SmashEnv(Mupen64PlusEnv):
             my_character_color='CUP', their_character_color='CLEFT',
             opponent_bot_level=10, map='DreamLand'):
         # TODO: Make player number configurable in the future.
-        self._my_damage_tracker = damage_tracker.DamageTracker(playernum=1)
-        self._their_damage_tracker = damage_tracker.DamageTracker(playernum=2)
         self._set_characters(my_character, their_character)
         self._set_characters_color(my_character_color, their_character_color)
         self._opponent_bot_level = opponent_bot_level
@@ -56,6 +49,8 @@ class SmashEnv(Mupen64PlusEnv):
         self._set_map(map)
 
         super(SmashEnv, self).__init__()
+        self._my_damage_tracker = damage_tracker.DamageTracker(self.frame_skip, playernum=1)
+        self._their_damage_tracker = damage_tracker.DamageTracker(self.frame_skip, playernum=2)
         self.action_space = spaces.MultiDiscrete([[-128, 127],  # Joystick X
                                                   [-128, 127],  # Joystick Y
                                                   [  0,  1],    # A
@@ -66,17 +61,15 @@ class SmashEnv(Mupen64PlusEnv):
                                                   [  0,  1]])   # C
 
     def _step(self, action):
-        self._curr_frame += FRAMES_PER_UPDATE
         # Append unneeded inputs.
         num_missing = len(ControllerState.A_BUTTON) - len(action)
         full_action = action + [0] * num_missing
         return super(SmashEnv, self)._step(full_action)
 
     def _reset(self):
-        self._my_damage_tracker = damage_tracker.DamageTracker(playernum=1)
-        self._their_damage_tracker = damage_tracker.DamageTracker(playernum=2)
-        self._curr_frame = 0
-        self._last_dmg_frame = 0
+        self._my_damage_tracker = damage_tracker.DamageTracker(self.frame_skip, playernum=1)
+        self._their_damage_tracker = damage_tracker.DamageTracker(self.frame_skip, playernum=2)
+        self._last_dmg_step = 0
 
         # Nothing to do on the first call to reset()
         if self.reset_count > 0:
@@ -91,18 +84,12 @@ class SmashEnv(Mupen64PlusEnv):
     # Agressiveness hyperparam- start applying if they go too long without
     # either taking or giving damage.
     def _get_aggressiveness_penalty(self):
-        frames_since_dmg = self._curr_frame - self._last_dmg_frame
+        frames_since_dmg = (self.step_count - self._last_dmg_step) * (self.frame_skip + 1)
         # Apply if we've gone 4 seconds without any damage.
         if frames_since_dmg > 4 * FRAMES_PER_SECOND:
             # Penalty is tuned to be equal to taking 1 damage every 1 second.
-            return -1.0 / UPDATES_PER_SECOND
+            return -1.0 * (self.frame_skip + 1) / FRAMES_PER_SECOND
         return 0.0
-
-    def _render(self, mode='human', close=False):
-        print "my_dmg, their_dmg =",
-        print self._my_damage_tracker.get_curr_damage(),
-        print self._their_damage_tracker.get_curr_damage()
-        return super(SmashEnv, self)._render(mode, close)
 
     def _get_dmg_reward(self):
         self._my_damage_tracker.observe_damage(self.pixel_array)
@@ -123,7 +110,7 @@ class SmashEnv(Mupen64PlusEnv):
         if they_died:
             reward += death_factor
         if (me_died or they_died or my_dmg_taken != 0 or their_dmg_taken != 0):
-            self._last_dmg_frame = self._curr_frame
+            self._last_dmg_step = self.step_count
         return reward
 
     def _get_reward(self):
@@ -252,7 +239,7 @@ class SmashEnv(Mupen64PlusEnv):
             self._wait(count=15, wait_for='Move Map Select Down')
         # Press start.
         self._press_button(ControllerState.START_BUTTON)
-        self._wait(count=500, wait_for='Load Level')
+        self._wait(count=450, wait_for='Load Level')
 
     def _navigate_pause_screen(self):
         # TODO: Possibly implement, if we want to allow exiting the map.

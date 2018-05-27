@@ -12,9 +12,13 @@ _MISSING_PERCENTS_IN_ROW_THRESHOLD = 12
 # make sense, and reporting the likely confident current health. Note that
 # reported health may be slightly delayed to ensure we are confident in
 # the reported health value.
+# Note: We recommend using a frame_skip no higher than 2, or it may be
+# unreliable at detecting deaths at 0 health.
 class DamageTracker(object):
-    def __init__(self, playernum=1):
+    def __init__(self, frame_skip, playernum=1):
         self._health_parser = health_parser.HealthParser()
+        # How many frames are skipped at every update.
+        self._frame_skip = frame_skip
         self._playernum = playernum
         self._curr_dmg = 0
         # Value of health last time reward was updated.
@@ -70,7 +74,7 @@ class DamageTracker(object):
             # We couldn't detect a % character. If this happens a lot,
             # it means the character likely died.
             self._missing_percents_in_row += 1
-            if (self._missing_percents_in_row >=
+            if (self._missing_percents_in_row * (self._frame_skip + 1) >=
                 _MISSING_PERCENTS_IN_ROW_THRESHOLD):
                  self._met_percent_threshold = True
         else:
