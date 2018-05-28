@@ -71,6 +71,8 @@ class Mupen64PlusEnv(gym.Env):
         self._base_load_config()
         self._base_validate_config()
         self.frame_skip = self.config['FRAME_SKIP']
+        if self.frame_skip < 1:
+            self.frame_skip = 1
         self.controller_server, self.controller_server_thread = self._start_controller_server()
         self.xvfb_process, self.emulator_process = \
             self._start_emulator(rom_name=self.config['ROM_NAME'],

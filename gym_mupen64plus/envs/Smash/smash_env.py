@@ -84,11 +84,11 @@ class SmashEnv(Mupen64PlusEnv):
     # Agressiveness hyperparam- start applying if they go too long without
     # either taking or giving damage.
     def _get_aggressiveness_penalty(self):
-        frames_since_dmg = (self.step_count - self._last_dmg_step) * (self.frame_skip + 1)
+        frames_since_dmg = (self.step_count - self._last_dmg_step) * self.frame_skip
         # Apply if we've gone 4 seconds without any damage.
         if frames_since_dmg > 4 * FRAMES_PER_SECOND:
             # Penalty is tuned to be equal to taking 1 damage every 1 second.
-            return -1.0 * (self.frame_skip + 1) / FRAMES_PER_SECOND
+            return -1.0 * self.frame_skip / FRAMES_PER_SECOND
         return 0.0
 
     def _get_dmg_reward(self):

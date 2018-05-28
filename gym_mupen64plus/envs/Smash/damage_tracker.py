@@ -12,7 +12,7 @@ _MISSING_PERCENTS_IN_ROW_THRESHOLD = 12
 # make sense, and reporting the likely confident current damage. Note that
 # reported damage may be slightly delayed to ensure we are confident in
 # the reported damage value.
-# Note: We recommend using a frame_skip no higher than 2, or it may be
+# Note: We recommend using a frame_skip no higher than 3, or it may be
 # unreliable at detecting deaths at 0 damage.
 class DamageTracker(object):
     def __init__(self, frame_skip, playernum=1):
@@ -76,7 +76,7 @@ class DamageTracker(object):
             # We couldn't detect a % character. If this happens a lot,
             # it means the character likely died.
             self._missing_percents_in_row += 1
-            if (self._missing_percents_in_row * (self._frame_skip + 1) >=
+            if (self._missing_percents_in_row * self._frame_skip >=
                 _MISSING_PERCENTS_IN_ROW_THRESHOLD):
                  self._met_percent_threshold = True
         else:
