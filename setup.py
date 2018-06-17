@@ -6,4 +6,5 @@ setup(name='gym_mupen64plus',
                         'numpy==1.14.2',
                         'PyYAML==3.12',
                         'termcolor==1.1.0',
-                        'mss==3.2.0'])
+                        'mss==3.2.0',
+                        'opencv-python==3.4.1.15'])
