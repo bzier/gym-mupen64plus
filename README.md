@@ -7,6 +7,7 @@ Currently, only MarioKart64 and SuperSmashBros have been wrapped, but the core e
 #### Thanks:
 Many of the core concepts for this wrapper were borrowed/adapted directly from [@kevinhughes27](https://github.com/kevinhughes27)'s fantastic [TensorKart](https://github.com/kevinhughes27/TensorKart) project (self-driving MarioKart with TensorFlow). A huge thanks goes out to him for inspiring the foundation of this project.
 
+Another big thanks to everyone who has contributed to the project so far. I appreciate the help, from the small typo/bug fixes to the large implementations.
 
 ## Contributing
 
