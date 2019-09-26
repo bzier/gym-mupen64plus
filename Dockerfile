@@ -75,7 +75,7 @@ WORKDIR /src/gym-mupen64plus
 RUN pip install -e .
 
 # Declare ROMs as a volume for mounting a host path outside the container
-VOLUME /src/gym-mupen64plus/gym_mupen64plus/ROMs/
+# VOLUME /src/gym-mupen64plus/gym_mupen64plus/ROMs/
 
 WORKDIR /src
 

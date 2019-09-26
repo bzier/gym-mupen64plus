@@ -1,0 +1,15 @@
+version: '2.3'
+
+services:
+
+  gym_mupen64plus:
+    image: gym_mupen64plus
+    container_name: gym_mupen64plus
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/src
+    network_mode: "host"
+    runtime: nvidia
+    command: python example.py
