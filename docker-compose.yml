@@ -8,8 +8,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - DISPLAY=:0
     volumes:
       - ./:/src
     network_mode: "host"
-    runtime: nvidia
     command: python example.py

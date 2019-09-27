@@ -47,34 +47,14 @@ The easiest, cleanest, most consistent way to get up and running with this proje
 
 ## Example Agents
 
-### Simple Test:
-A simple example to test if the environment is up-and-running:
-```
-docker run -it \
-  --name test-gym-env \
-  -p 5900 \
-  --mount source="$(MY_ROM_PATH)",target=/src/gym-mupen64plus/gym_mupen64plus/ROMs,type=bind \
-  bz/gym-mupen64plus:0.0.5 \ # This should match the image & tag you used during setup
-  python verifyEnv.py
-```
-
-```python
-#!/bin/python
-import gym, gym_mupen64plus
-
-env = gym.make('Mario-Kart-Luigi-Raceway-v0')
-env.reset()
-
-for i in range(88):
-    (obs, rew, end, info) = env.step([0, 0, 0, 0, 0]) # NOOP until green light
-
-for i in range(100):
-    (obs, rew, end, info) = env.step([0, 0, 1, 0, 0]) # Drive straight
-
-raw_input("Press <enter> to exit... ")
-
-env.close()
-```
+### Getting Started:
+1. Install [Docker](https://docs.docker.com/install/) and [Docker-Compose](https://docs.docker.com/compose/install/)
+2. Clone the repo: `git clone https://github.com/bzier/gym-mupen64plus.git`
+3. Download the MarioKart64 ROM and place it in: `gym_mupen64plus/ROMs` (just Google "download mariokart64" and you will find it)
+4. Install a VNC client to visualize the game, for example: `sudo apt install remmina` (Linux only)
+5. Open `gym-mupen64plus` and run `docker-compose up`
+6. Using the VNC client, make a VNC connection to `127.0.0.1:5900`
+7. Done! You should see Mario smashing into the wall.
 
 ### AI Agent (supervised learning):
 The original inspiration for this project has now been updated to take advantage of this gym environment. It is an example of using supervised learning to train an AI Agent that is capable of interacting with the environment (Mario Kart). It utilizes the TensorFlow library for its machine learning. Check out TensorKart [here](https://github.com/kevinhughes27/TensorKart).

@@ -8,6 +8,7 @@ def startVNC(display):
 env = gym.make('Mario-Kart-Luigi-Raceway-v0')
 env.reset()
 
+#Start casting VNC at display 1
 startVNC(1)
 
 for i in range(88):
