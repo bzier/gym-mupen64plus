@@ -2,9 +2,8 @@ version: '2.3'
 
 services:
 
-  gym_mupen64plus:
+  agent:
     image: gym_mupen64plus
-    container_name: gym_mupen64plus
     build:
       context: .
       dockerfile: Dockerfile
