@@ -49,7 +49,7 @@ The easiest, cleanest, most consistent way to get up and running with this proje
 
 ### Simple Test:
 A simple example to test if the environment is up-and-running:
-```
+```sh
 docker run -it \
   --name test-gym-env \
   -p 5900 \
