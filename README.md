@@ -17,7 +17,29 @@ Please create issues as you encounter them. Future work and ideas will be captur
 
 The easiest, cleanest, most consistent way to get up and running with this project is via [`Docker`](https://docs.docker.com/). These instructions will focus on that approach.
 
-### With Docker
+### Running with docker-compose
+
+1. Run the following command to build & run the project via `docker-compose`.
+
+    ```sh
+    docker-compose up --build -d
+    ```
+
+    This will start the following 4 containers:
+    - `xvfbsrv` runs XVFB
+    - `vncsrv` runs a VNC server connected to the Xvfb container
+    - `agent` runs the example python script
+    - `emulator` runs the mupen64plus emulator
+
+2. Then you can use your favorite VNC client to connect to `localhost` to watch the XVFB display in real-time. Note that running the VNC server and client can cause some performance overhead.
+
+3. ### That's it!
+
+    ...wait... that's it??
+
+    Yup... Ah, the beauty of Docker.
+
+### Building the Docker image
 
 1. Run the following command to build the project's docker image
 
@@ -31,12 +53,6 @@ The easiest, cleanest, most consistent way to get up and running with this proje
     docker build -t bz/gym-mupen64plus:0.0.5 .
     ```
 
-    ### That's it!
-
-    ...wait... that's it??
-
-    Yup... Ah, the beauty of Docker.
-
 ### Without Docker
 * :(
   > It is possible to run without Docker, but there isn't a compelling reason to and it just introduces a significant amount of setup work and potential complications.
@@ -48,33 +64,16 @@ The easiest, cleanest, most consistent way to get up and running with this proje
 ## Example Agents
 
 ### Simple Test:
-A simple example to test if the environment is up-and-running:
+A simple [example](./example.py) to test if the environment is up-and-running:
 ```
 docker run -it \
   --name test-gym-env \
   -p 5900 \
   --mount source="$(MY_ROM_PATH)",target=/src/gym-mupen64plus/gym_mupen64plus/ROMs,type=bind \
   bz/gym-mupen64plus:0.0.5 \ # This should match the image & tag you used during setup
-  python verifyEnv.py
+  python example.py
 ```
 
-```python
-#!/bin/python
-import gym, gym_mupen64plus
-
-env = gym.make('Mario-Kart-Luigi-Raceway-v0')
-env.reset()
-
-for i in range(88):
-    (obs, rew, end, info) = env.step([0, 0, 0, 0, 0]) # NOOP until green light
-
-for i in range(100):
-    (obs, rew, end, info) = env.step([0, 0, 1, 0, 0]) # Drive straight
-
-raw_input("Press <enter> to exit... ")
-
-env.close()
-```
 
 ### AI Agent (supervised learning):
 The original inspiration for this project has now been updated to take advantage of this gym environment. It is an example of using supervised learning to train an AI Agent that is capable of interacting with the environment (Mario Kart). It utilizes the TensorFlow library for its machine learning. Check out TensorKart [here](https://github.com/kevinhughes27/TensorKart).

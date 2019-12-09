@@ -6,8 +6,8 @@ FROM ubuntu:xenial-20170915 AS base
 ENV \
     # Prevent dpkg from prompting for user input during package setup
     DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
-    # mupen64plus will be installed in /usr/games/; add to the $PATH
-    PATH=$PATH:/usr/games/ \
+    # mupen64plus will be installed in /usr/games; add to the $PATH
+    PATH=$PATH:/usr/games \
     # Set default DISPLAY
     DISPLAY=:0
 
@@ -31,7 +31,7 @@ RUN git clone https://github.com/mupen64plus/mupen64plus-core && \
     cd .. && \
     git clone https://github.com/kevinhughes27/mupen64plus-input-bot && \
         cd mupen64plus-input-bot && \
-        git reset --hard 40eff412eca6491acb7f70932b87b404c9c3ef70 && \
+        git reset --hard 0b5155b7aa6f9fd3dbbf01b2d2439b5b1acb884f && \
     make all && \
     make install
 
@@ -54,12 +54,21 @@ RUN apt-get update && \
 # Upgrade pip
 RUN pip install --upgrade pip 
 
-# install VirtualGL (provides vglrun to allow us to run the emulator in XVFB)
+# Install VirtualGL (provides vglrun to allow us to run the emulator in XVFB)
 # (Check for new releases here: https://github.com/VirtualGL/virtualgl/releases)
 ENV VIRTUALGL_VERSION=2.5.2
 RUN wget "https://sourceforge.net/projects/virtualgl/files/${VIRTUALGL_VERSION}/virtualgl_${VIRTUALGL_VERSION}_amd64.deb" && \
     apt install ./virtualgl_${VIRTUALGL_VERSION}_amd64.deb && \
     rm virtualgl_${VIRTUALGL_VERSION}_amd64.deb
+
+# Install dependencies (here for caching)
+RUN pip install \
+    gym==0.7.4 \
+    numpy==1.16.2 \
+    PyYAML==5.1 \
+    termcolor==1.1.0 \
+    mss==4.0.2 \
+    opencv-python==4.1.0.25
 
 # Copy compiled input plugin from buildstuff layer
 COPY --from=buildstuff /usr/local/lib/mupen64plus/mupen64plus-input-bot.so /usr/local/lib/mupen64plus/
@@ -68,7 +77,7 @@ COPY --from=buildstuff /usr/local/lib/mupen64plus/mupen64plus-input-bot.so /usr/
 COPY . /src/gym-mupen64plus
 # Copy the Super Smash Bros. save file to the mupen64plus save directory
 # mupen64plus expects a specific filename, hence the awkward syntax and name
-COPY ["./gym_mupen64plus/envs/Smash/smash.sra", "/root/.local/share/mupen64plus/save/Super Smash Bros. (U) [!].sra"]
+COPY [ "./gym_mupen64plus/envs/Smash/smash.sra", "/root/.local/share/mupen64plus/save/Super Smash Bros. (U) [!].sra" ]
 
 # Install requirements & this package
 WORKDIR /src/gym-mupen64plus

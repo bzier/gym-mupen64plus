@@ -65,7 +65,6 @@ class Mupen64PlusEnv(gym.Env):
         self.reset_count = 0
         self.step_count = 0
         self.running = True
-        self.mss_grabber = None
         self.episode_over = False
         self.pixel_array = None
         self._base_load_config()
@@ -74,10 +73,34 @@ class Mupen64PlusEnv(gym.Env):
         if self.frame_skip < 1:
             self.frame_skip = 1
         self.controller_server, self.controller_server_thread = self._start_controller_server()
-        self.xvfb_process, self.emulator_process = \
-            self._start_emulator(rom_name=self.config['ROM_NAME'],
-                                 gfx_plugin=self.config['GFX_PLUGIN'],
-                                 input_driver_path=self.config['INPUT_DRIVER_PATH'])
+
+
+        initial_disp = os.environ["DISPLAY"]
+        cprint('Initially on DISPLAY %s' % initial_disp, 'red')
+
+        # If the EXTERNAL_EMULATOR environment variable is True, we are running the
+        # emulator out-of-process (likely via docker/docker-compose). If not, we need
+        # to start the emulator in-process here
+        if os.environ["EXTERNAL_EMULATOR"] != 'True':
+            self.xvfb_process, self.emulator_process = \
+                self._start_emulator(rom_name=self.config['ROM_NAME'],
+                                     gfx_plugin=self.config['GFX_PLUGIN'],
+                                     input_driver_path=self.config['INPUT_DRIVER_PATH'])
+
+        # TODO: Test and cleanup:
+        # May need to initialize this after the DISPLAY env var has been set
+        # so it attaches to the correct X display; otherwise screenshots may
+        # come from the wrong place. This used to be true when we were using
+        # wxPython for screenshots. Untested after switching to mss.
+        cprint('Calling mss.mss() with DISPLAY %s' % os.environ["DISPLAY"], 'red')
+        self.mss_grabber = mss.mss()
+        time.sleep(2) # Give mss a couple seconds to initialize; also may not be necessary
+
+        # Restore the DISPLAY env var
+        os.environ["DISPLAY"] = initial_disp
+        cprint('Changed back to DISPLAY %s' % os.environ["DISPLAY"], 'red')
+        
+
         with self.controller_server.frame_skip_disabled():
             self._navigate_menu()
 
@@ -257,9 +280,6 @@ class Mupen64PlusEnv(gym.Env):
                "--input", input_driver_path,
                rom_path]
 
-        initial_disp = os.environ["DISPLAY"]
-        cprint('Initially on DISPLAY %s' % initial_disp, 'red')
-
         xvfb_proc = None
         if self.config['USE_XVFB']:
             display_num = -1
@@ -286,7 +306,7 @@ class Mupen64PlusEnv(gym.Env):
                 if xvfb_proc.poll() is None:
                     success = True
 
-                print('')
+                print('') # new line
 
             if not success:
                 msg = "Failed to initialize Xvfb!"
@@ -305,19 +325,6 @@ class Mupen64PlusEnv(gym.Env):
                                             env=os.environ.copy(),
                                             shell=False,
                                             stderr=subprocess.STDOUT)
-
-        # TODO: Test and cleanup:
-        # May need to initialize this after the DISPLAY env var has been set
-        # so it attaches to the correct X display; otherwise screenshots may
-        # come from the wrong place. This used to be true when we were using
-        # wxPython for screenshots. Untested after switching to mss.
-        cprint('Calling mss.mss() with DISPLAY %s' % os.environ["DISPLAY"], 'red')
-        self.mss_grabber = mss.mss()
-        time.sleep(2) # Give mss a couple seconds to initialize; also may not be necessary
-
-        # Restore the DISPLAY env var
-        os.environ["DISPLAY"] = initial_disp
-        cprint('Changed back to DISPLAY %s' % os.environ["DISPLAY"], 'red')
 
         emu_mon = EmulatorMonitor()
         monitor_thread = threading.Thread(target=emu_mon.monitor_emulator,
