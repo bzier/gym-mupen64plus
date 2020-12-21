@@ -54,10 +54,10 @@ docker run -it \
   --name test-gym-env \
   -p 5900 \
   --mount source="$(MY_ROM_PATH)",target=/src/gym-mupen64plus/gym_mupen64plus/ROMs,type=bind \
-  bz/gym-mupen64plus:0.0.5 \ # This should match the image & tag you used during setup
-  python verifyEnv.py
+  bz/gym-mupen64plus:0.0.5 `# This should match the image & tag you used during setup` \
+  python gym-mupen64plus/verifyEnv.py
 ```
-
+Create a new file called verifyEnv.py with the below code, place in the top level gym-mupen64plus folder
 ```python
 #!/bin/python
 import gym, gym_mupen64plus
