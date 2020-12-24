@@ -49,7 +49,8 @@ RUN apt-get update && \
         imagemagick \
         mupen64plus \
         nano \
-        ffmpeg
+        ffmpeg \
+        libjson-c2 libjson-c-dev
 
 # Upgrade pip
 RUN pip install --upgrade pip 
