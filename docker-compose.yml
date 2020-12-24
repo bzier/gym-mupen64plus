@@ -1,9 +1,9 @@
-version: '2.3'
+version: '3.2'
 
 services:
 
   xvfbsrv:
-    image: gym_mupen64plus
+    image: "${GYM_IMAGE_SPEC}"
     ports:
       - "6000:6000"
     entrypoint: [
@@ -17,7 +17,7 @@ services:
 
 
   vncsrv:
-    image: gym_mupen64plus
+    image: "${GYM_IMAGE_SPEC}"
     environment:
       - DISPLAY=xvfbsrv:0
     ports:
@@ -27,9 +27,13 @@ services:
 
 
   emulator:
-    image: gym_mupen64plus
+    image: "${GYM_IMAGE_SPEC}"
     environment:
       - DISPLAY=xvfbsrv:0
+    volumes:
+      - type: bind
+        source: "${LOCAL_ROM_PATH}" # Since ROMs are not included in the image, bind mount a local path
+        target: /src/gym-mupen64plus/gym_mupen64plus/ROMs
     command: [
       'mupen64plus',
       '--nospeedlimit',
@@ -47,7 +51,7 @@ services:
 
 
   agent:
-    image: gym_mupen64plus
+    image: "${GYM_IMAGE_SPEC}"
     build:
       context: .
       dockerfile: Dockerfile
