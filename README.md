@@ -17,6 +17,36 @@ Please create issues as you encounter them. Future work and ideas will be captur
 
 The easiest, cleanest, most consistent way to get up and running with this project is via [`Docker`](https://docs.docker.com/). These instructions will focus on that approach.
 
+### Configure your ROM
+
+*Links to ROM files will not be included here. Use your ninja skills as appropriate.*
+
+1. Ensure you have a valid ROM.
+
+We used a MarioKart ROM with [MD5 checksum](http://emn178.github.io/online-tools/md5_checksum.html) `e19398a0fd1cc12df64fca7fbcaa82cc`.
+
+2. Rename the file to match the game's configuration.
+
+The [MarioKart environment](./gym_mupen64plus/envs/MarioKart64/mario_kart_config.yml) expects your ROM to be named `marioKart.n64`.
+
+3. Set `LOCAL_ROM_PATH` in [.env](./.env) with the path to your local ROM.
+
+### Building the Docker image
+
+1. Run the following command to build the project's docker image.
+
+    > You can substitute the placeholders between `< >` with your own values.
+
+    ```sh
+    docker build -t <image_name>:<tag> .
+    ```
+    ```sh
+    # Example:
+    docker build -t bz/gym-mupen64plus:latest .
+    ```
+
+2. Set `GYM_IMAGE_SPEC` in [.env](./.env) with your `<image_name>:<tag>` values.
+
 ### Running with docker-compose
 
 1. Run the following command to build & run the project via `docker-compose`.
@@ -31,27 +61,13 @@ The easiest, cleanest, most consistent way to get up and running with this proje
     - `agent` runs the example python script
     - `emulator` runs the mupen64plus emulator
 
-2. Then you can use your favorite VNC client to connect to `localhost` to watch the XVFB display in real-time. Note that running the VNC server and client can cause some performance overhead.
+2. Then you can use your favorite VNC client (e.g., [VNC Viewer](https://www.realvnc.com/en/connect/download/viewer/)) to connect to `localhost` to watch the XVFB display in real-time. Note that running the VNC server and client can cause some performance overhead.
 
 3. ### That's it!
 
     ...wait... that's it??
 
     Yup... Ah, the beauty of Docker.
-
-### Building the Docker image
-
-1. Run the following command to build the project's docker image
-
-    > You should substitute the placeholders between `< >` with your own values.
-
-    ```sh
-    docker build -t <image_name>:<tag> .
-    ```
-    ```sh
-    # Example:
-    docker build -t bz/gym-mupen64plus:0.0.5 .
-    ```
 
 ### Without Docker
 * :(
@@ -64,16 +80,7 @@ The easiest, cleanest, most consistent way to get up and running with this proje
 ## Example Agents
 
 ### Simple Test:
-A simple [example](./example.py) to test if the environment is up-and-running:
-```sh
-docker run -it \
-  --name test-gym-env \
-  -p 5900 \
-  --mount source="$(MY_ROM_PATH)",target=/src/gym-mupen64plus/gym_mupen64plus/ROMs,type=bind \
-  bz/gym-mupen64plus:0.0.5 \ # This should match the image & tag you used during setup
-  python example.py
-```
-
+A simple [example](./example.py) to test if the environment is up-and-running. This example test is automatically run via the [docker-compose](./docker-compose.yml) setup.
 
 ### AI Agent (supervised learning):
 The original inspiration for this project has now been updated to take advantage of this gym environment. It is an example of using supervised learning to train an AI Agent that is capable of interacting with the environment (Mario Kart). It utilizes the TensorFlow library for its machine learning. Check out TensorKart [here](https://github.com/kevinhughes27/TensorKart).
@@ -84,10 +91,6 @@ An adaptation of the A3C algorithm has been applied to this environment (Mario K
 
 
 ## Games
-
-*Links to ROM files will not be included here. Use your ninja skills as appropriate.*
-
-ROM files can be placed in `./gym_mupen64plus/ROMs/`.
 
 Here is a list of games that have been wrapped. Each game may support multiple 'modes' with different levels or missions configured. See each of the games' pages for more details.
 * [MarioKart64](gym_mupen64plus/envs/MarioKart64/README.md)

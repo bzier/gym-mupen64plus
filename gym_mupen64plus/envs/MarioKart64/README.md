@@ -6,7 +6,7 @@ This page describes the MarioKart64 environment(s).
 
 A configuration file ([`mario_kart_config.yml`](mario_kart_config.yml)) has been provided for this game.
 
-The first configuration setting is `ROM_NAME`. This setting must specify the name of the MarioKart64 ROM file (which should be placed in `./gym_mupen64plus/ROMs/`). As mentioned on the top page, links to ROM files will not be provided here.
+The first configuration setting is `ROM_NAME`. This setting must specify the name of the MarioKart64 ROM file (which are linked in `./gym_mupen64plus/ROMs/`). As mentioned on the top page, links to ROM files will not be provided here.
 
 The second setting is an override of the base config for the video plugin `GFX_PLUGIN`, which has been set to `mupen64plus-video-glide64`. It has been observed that this plugin outperforms the default `mupen64plus-video-rice` plugin for this game (at least on my system). This value can be removed to revert to the default in the base config.
 
