@@ -50,7 +50,7 @@ RUN apt-get update && \
         mupen64plus \
         nano \
         ffmpeg \
-        libjson-c2 libjson-c-dev
+        libjson-c2
 
 # Upgrade pip
 RUN pip install --upgrade pip 
