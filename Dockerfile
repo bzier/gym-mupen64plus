@@ -49,7 +49,8 @@ RUN apt-get update && \
         imagemagick \
         mupen64plus \
         nano \
-        ffmpeg
+        ffmpeg \
+        libjson-c2
 
 # Upgrade pip (pip 21.0 dropped support for Python 2.7 in January 2021 - https://stackoverflow.com/a/65896996/9526448)
 # TODO: Python3 upgrade - https://github.com/bzier/gym-mupen64plus/issues/81
