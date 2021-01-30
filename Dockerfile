@@ -31,7 +31,7 @@ RUN git clone https://github.com/mupen64plus/mupen64plus-core && \
     cd .. && \
     git clone https://github.com/kevinhughes27/mupen64plus-input-bot && \
         cd mupen64plus-input-bot && \
-        git reset --hard 0b5155b7aa6f9fd3dbbf01b2d2439b5b1acb884f && \
+        git reset --hard 0a1432035e2884576671ef9777a2047dc6c717a2 && \
     make all && \
     make install
 
