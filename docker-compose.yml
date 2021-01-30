@@ -30,6 +30,10 @@ services:
     image: gym_mupen64plus
     environment:
       - DISPLAY=xvfbsrv:0
+    volumes:
+      - type: bind
+        source: "${LOCAL_ROM_PATH}" # Since ROMs are not included in the image, bind mount a local path (set this value in the .env file)
+        target: /src/gym-mupen64plus/gym_mupen64plus/ROMs
     command: [
       'mupen64plus',
       '--nospeedlimit',
