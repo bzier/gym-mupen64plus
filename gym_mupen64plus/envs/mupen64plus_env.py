@@ -81,7 +81,8 @@ class Mupen64PlusEnv(gym.Env):
         # If the EXTERNAL_EMULATOR environment variable is True, we are running the
         # emulator out-of-process (likely via docker/docker-compose). If not, we need
         # to start the emulator in-process here
-        if os.environ["EXTERNAL_EMULATOR"] != 'True':
+        external_emulator = os.environ.has_key("EXTERNAL_EMULATOR") and os.environ["EXTERNAL_EMULATOR"] == 'True'
+        if not external_emulator:
             self.xvfb_process, self.emulator_process = \
                 self._start_emulator(rom_name=self.config['ROM_NAME'],
                                      gfx_plugin=self.config['GFX_PLUGIN'],
