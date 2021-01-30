@@ -51,8 +51,9 @@ RUN apt-get update && \
         nano \
         ffmpeg
 
-# Upgrade pip
-RUN pip install --upgrade pip 
+# Upgrade pip (pip 21.0 dropped support for Python 2.7 in January 2021 - https://stackoverflow.com/a/65896996/9526448)
+# TODO: Python3 upgrade - https://github.com/bzier/gym-mupen64plus/issues/81
+RUN pip install --upgrade "pip < 21.0"
 
 # Install VirtualGL (provides vglrun to allow us to run the emulator in XVFB)
 # (Check for new releases here: https://github.com/VirtualGL/virtualgl/releases)
