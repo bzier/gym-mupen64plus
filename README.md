@@ -19,6 +19,11 @@ The easiest, cleanest, most consistent way to get up and running with this proje
 
 ### Running with docker-compose
 
+**Pre-requisites:**
+- Docker & docker-compose
+- Ensure you have a copy of the ROMs you wish to use. See the [Games](#Games) section below for details.
+
+**Steps:**
 1. Run the following command to build & run the project via `docker-compose`.
 
     ```sh
@@ -31,7 +36,7 @@ The easiest, cleanest, most consistent way to get up and running with this proje
     - `agent` runs the example python script
     - `emulator` runs the mupen64plus emulator
 
-2. Then you can use your favorite VNC client to connect to `localhost` to watch the XVFB display in real-time. Note that running the VNC server and client can cause some performance overhead.
+2. Then you can use your favorite VNC client (e.g., [VNC Viewer](https://www.realvnc.com/en/connect/download/viewer/)) to connect to `localhost` to watch the XVFB display in real-time. Note that running the VNC server and client can cause some performance overhead.
 
 3. ### That's it!
 
@@ -39,7 +44,28 @@ The easiest, cleanest, most consistent way to get up and running with this proje
 
     Yup... Ah, the beauty of Docker.
 
+<br/>
+<details>
+  <summary><b>Miscelaneous notes (click to expand):</b></summary>
+
+- After connecting with a VNC client, depending how quickly you connected, you should see the environment navigate the menus to select the track/character, then Mario will wait for the green light, drive straight briefly and then start doing doughnuts.
+
+- The script will run for a bit more than 10,000 steps before prompting for input. Without an interactive terminal, if you waited until the end, this will hit an EOF and exit. Mario will appear to have frozen since the XVFB screen is no longer being updated.
+
+- You can view the output from the `example.py` script by tailing the agent container logs. You can see sample output [here](docs/example_script_output.md).
+    ```
+    docker logs -f gym-mupen64plus_agent_1
+    ```
+- You can clean up with:
+    ```
+    docker-compose down
+    ```
+
+</details><br/>
+
 ### Building the Docker image
+
+If you would like to build the docker image on its own (outside of docker-compose), you can:
 
 1. Run the following command to build the project's docker image
 
@@ -54,26 +80,43 @@ The easiest, cleanest, most consistent way to get up and running with this proje
     ```
 
 ### Without Docker
-* :(
+
+<details>
+  <summary>:( click to expand :(</summary>
+  
   > It is possible to run without Docker, but there isn't a compelling reason to and it just introduces a significant amount of setup work and potential complications.
   >
   > **`Fair warning:`** I likely will ***not*** be testing manual setup or maintaining its documentation going forward so it may become stale over time.
   >
   > However, if you really do want to, here are the [old instructions](docs/manual_setup.md).
 
+</details><br/>
+
 ## Example Agents
 
 ### Simple Test:
+
+The docker-compose steps above are the easiest approach to get started. However, if you build the image separately and would like to test without using docker-compose, you can.
+
 A simple [example](./example.py) to test if the environment is up-and-running:
 ```sh
+# Note: if you have placed your ROMs in a different location, be sure to update the source path in the command.
 docker run -it \
   --name test-gym-env \
   -p 5900 \
-  --mount source="$(MY_ROM_PATH)",target=/src/gym-mupen64plus/gym_mupen64plus/ROMs,type=bind \
-  bz/gym-mupen64plus:0.0.5 \ # This should match the image & tag you used during setup
-  python example.py
+  --mount source="$(pwd)/gym_mupen64plus/ROMs",target=/src/gym-mupen64plus/gym_mupen64plus/ROMs,type=bind \
+  bz/gym-mupen64plus:0.0.5 \ # This should match the image & tag you used during setup above
+  python gym-mupen64plus/example.py
 ```
 
+The example script will repeat doughnuts for 10,000 steps. You can see sample output [here](docs/example_script_output.md).
+
+**Clean up:**
+
+You can kill the process (and exit the container) by hitting `ctrl`+`c` (probably a few times), and you can remove the container with:
+```sh
+docker rm test-gym-env
+```
 
 ### AI Agent (supervised learning):
 The original inspiration for this project has now been updated to take advantage of this gym environment. It is an example of using supervised learning to train an AI Agent that is capable of interacting with the environment (Mario Kart). It utilizes the TensorFlow library for its machine learning. Check out TensorKart [here](https://github.com/kevinhughes27/TensorKart).
@@ -85,80 +128,20 @@ An adaptation of the A3C algorithm has been applied to this environment (Mario K
 
 ## Games
 
+**ROM files:**
+
 *Links to ROM files will not be included here. Use your ninja skills as appropriate.*
 
-ROM files can be placed in `./gym_mupen64plus/ROMs/`.
+ROM files can be placed in `./gym_mupen64plus/ROMs/`. If you wish to place them elsewhere, update your `.env` file with the path. See the game READMEs below for details about specific games, including specifying the proper ROM file name.
+
+**Game docs:**
 
 Here is a list of games that have been wrapped. Each game may support multiple 'modes' with different levels or missions configured. See each of the games' pages for more details.
 * [MarioKart64](gym_mupen64plus/envs/MarioKart64/README.md)
 * [Super Smash Bros](gym_mupen64plus/envs/Smash/README.md)
 
+<br/>
 
-## Architecture
+# Additional Documentation:
 
-### `Mupen64PlusEnv`:
-
-The core `Mupen64PlusEnv` class has been built to handle many of the details of the wrapping and execution of the Mupen64Plus emulator, as well as the implementation of the gym environment. In fact, it inherits from `gym.Env`. The class is abstract and each game environment inherits from it. The game environment subclass provides the ROM path to the base.
-
-#### Initialization:
-* starts the controller server using the port specified in the configuration
-* starts the emulator process with the provided ROM path (this also uses values from the config file)
-* sets up the observation and action spaces (see the [gym documentation](https://gym.openai.com/docs))
-    * the observation space is the screen pixels, by default [640, 480, 3]
-    * the default action space is the controller mapping provided by `mupen64plus-input-bot`
-        * Joystick X-axis (L/R): value from -80 to 80
-        * Joystick Y-axis (U/D): value from -80 to 80
-        * A Button: value of 0 or 1
-        * B Button: value of 0 or 1
-        * RB Button: value of 0 or 1
-    * *Note:* certain game environments may choose to override this default action space to provide options more suited for the specific game (details should be noted in the respective game's README)
-
-#### Methods:
-* `_step(action)` handles taking the supplied action, passing it to the controller server, and reading the new `observation`, `reward`, and `end_episode` values.
-
-* `_observe()` grabs a screenshot of the emulator window and returns the pixel data as a numpy array.
-
-* `_render()` returns the image or opens a viewer depending on the specified mode. Note that calling `_render()` inside a container currently interferes with the emulator display causing the screen to appear frozen, and should be avoided.
-
-* `_close()` shuts down the environment: stops the emulator, and stops the controller server.
-
-* Abstract methods that each game environment must implement:
-    * `_navigate_menu()` moves through the game menu from startup to the beginning of an episode.
-
-    * `_get_reward()` determines the reward for each step.
-
-    * `_evaluate_end_state()` determines whether or not the episode is over.
-
-    * `_reset()` resets the environment to begin a new episode.
-
-### `ControllerHTTPServer`:
-
-When initialized, will start an HTTP Server listening on the specified port. The server will listen for `GET` requests, but will wait to respond until `send_controls()` is called. Each time `send_controls()` is called, it will block and wait for the `GET` request to be processed (up to a configured timeout). In other words, the emulator will end up waiting indefinitely for a controller action, essentially waiting for an agent to `step()`.
-
-### `EmulatorMonitor`:
-
-This class simply polls the emulator process to ensure it is still up and running. If not, it prints the emulator process's exit code. Eventually this will also cause the environment to shutdown since the heart of it just died.
-
-### Game Environments:
-
-Each game environment will be created in an appropriately named subdirectory within the `envs` directory. For example: `[...]/gym_mupen64plus/envs/MarioKart64`. The game's environment class must inherit from the base `Mupen64PlusEnv` class described above. This class should be imported in the top-level `__init__.py` file. Example:
-```python
-from gym_mupen64plus.envs.MarioKart64.mario_kart_env import MarioKartEnv
-```
-
-Each game should also have an `__init__.py` file which registers the game's environment(s) in `gym`. Example:
-```python
-from gym.envs.registration import register
-from gym_mupen64plus.envs.MarioKart64.track_envs import MarioKartLuigiRacewayEnv
-
-register(
-    id='Mario-Kart-Luigi-Raceway-v0',
-    entry_point='gym_mupen64plus.envs.MarioKart64:MarioKartLuigiRacewayEnv',
-    tags={
-        'mupen': True,
-        'cup': 'Mushroom',
-        'wrapper_config.TimeLimit.max_episode_steps': 100000,
-    },
-    nondeterministic=True,
-)
-```
+* [Architecture](docs/architecture.md)
