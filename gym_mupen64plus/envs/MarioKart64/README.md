@@ -6,9 +6,32 @@ This page describes the MarioKart64 environment(s).
 
 A configuration file ([`mario_kart_config.yml`](mario_kart_config.yml)) has been provided for this game.
 
-The first configuration setting is `ROM_NAME`. This setting must specify the name of the MarioKart64 ROM file (which should be placed in `./gym_mupen64plus/ROMs/`). As mentioned on the top page, links to ROM files will not be provided here.
+The first configuration setting is `ROM_NAME`. This setting must specify the name of the MarioKart64 ROM file (which should be placed in `./gym_mupen64plus/ROMs/`). The default configuration value is `marioKart.n64`.
 
 The second setting is an override of the base config for the video plugin `GFX_PLUGIN`, which has been set to `mupen64plus-video-glide64`. It has been observed that this plugin outperforms the default `mupen64plus-video-rice` plugin for this game (at least on my system). This value can be removed to revert to the default in the base config.
+
+### A note on the ROM file:
+As mentioned on the top page, links to ROM files will not be provided here. However, because some people have encountered errors with certain ROMs, it is worth mentioning that we used a MarioKart64 ROM with an MD5 checksum of `e19398a0fd1cc12df64fca7fbcaa82cc`.
+
+A couple ways to check the MD5 sum:
+- Online checksum tool available [here](http://emn178.github.io/online-tools/md5_checksum.html)
+- Command line:
+    ```sh
+    # MacOS:
+    md5 marioKart.n64
+
+    # Unix/Linux:
+    md5sum marioKart.n64
+    ```
+
+Sample emulator output for an invalid ROM file (see [issue #77](https://github.com/bzier/gym-mupen64plus/issues/77) for more details):
+```
+...
+Core Error: open_rom(): not a valid ROM image
+UI-Console Error: core failed to open ROM image file '/src/gym-mupen64plus/gym_mupen64plus/ROMs/marioKart.n64'.
+Changed back to DISPLAY :0
+Emulator closed with code: 10
+```
 
 ## Implementation Details
 
