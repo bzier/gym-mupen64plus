@@ -70,3 +70,9 @@ register(
     nondeterministic=True,
 )
 ```
+
+### Docker Compose:
+
+The project has been updated to be runnable via `docker-compose` (see [running with docker compose](../README.md#running-with-docker-compose)). This runs each of the independent processes in a separate container (a separate docker-compose service). See the [docker-compose.yml](../docker-compose.yml) file for how this is defined.
+
+[![docker-compose containers](architecture-docker-compose.png "docker-compose containers")](https://github.com/bzier/gym-mupen64plus/raw/architecture/docs/architecture-docker-compose.png)
