@@ -1,0 +1,62 @@
+version: '2.3'
+
+services:
+
+  xvfbsrv:
+    image: gym_mupen64plus
+    ports:
+      - "6000:6000"
+    entrypoint: [
+      'Xvfb', ':0',
+      '-screen', '0',
+      '640x480x24',
+      '-fbdir', '/dev/shm', # Framebuffer to use shared memory
+      '-ac', # Disable access control - enables access by any host (https://www.x.org/archive/X11R6.8.1/doc/Xserver.1.html)
+      '-listen', 'tcp' # Allow remote connections over TCP
+    ]
+
+
+  vncsrv:
+    image: gym_mupen64plus
+    environment:
+      - DISPLAY=xvfbsrv:0
+    ports:
+      - "5900:5900"
+    entrypoint: [ 'x11vnc', '-forever', '-viewonly', '-shared', '-nopw', '-noshm' ]
+    depends_on: [ xvfbsrv ]
+
+
+  emulator:
+    image: gym_mupen64plus
+    environment:
+      - DISPLAY=xvfbsrv:0
+    volumes:
+      - type: bind
+        source: "${LOCAL_ROM_PATH}" # Since ROMs are not included in the image, bind mount a local path (set this value in the .env file)
+        target: /src/gym-mupen64plus/gym_mupen64plus/ROMs
+    command: [
+      'mupen64plus',
+      '--nospeedlimit',
+      '--nosaveoptions',
+      '--resolution', '640x480',
+      '--gfx', 'mupen64plus-video-glide64.so',
+      '--audio', 'dummy',
+      '--input', '/usr/local/lib/mupen64plus/mupen64plus-input-bot.so',
+      '--set', 'Input-Bot-Control0[plugged]=1',
+      '--set', 'Input-Bot-Control0[host]=agent',
+      '--set', 'Input-Bot-Control0[port]=8082',
+      '/src/gym-mupen64plus/gym_mupen64plus/ROMs/marioKart.n64'
+    ]
+    depends_on: [ xvfbsrv, agent ]
+
+
+  agent:
+    image: gym_mupen64plus
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DISPLAY=xvfbsrv:0
+      - EXTERNAL_EMULATOR=True
+    command: [ 'python', '-u', 'gym-mupen64plus/example.py' ] # -u for unbuffered output so logs show immediately (in theory)
+    depends_on: [ xvfbsrv ]

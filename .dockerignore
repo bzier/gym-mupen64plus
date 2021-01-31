@@ -1,4 +1,14 @@
 Dockerfile
 .dockerignore
 .git
+**/.gitignore
 .vscode
+
+# Ignore the ROM files. Rather than copy the ROM files into the image, bind mount to a local directory
+gym_mupen64plus/ROMs/*
+
+# Ignore the README and docs/
+#   changes here shouldn't invalidate the cached image layers, and no need for
+#   these to exist inside the image anyway
+README.md
+docs/
