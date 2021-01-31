@@ -1,6 +1,9 @@
 
 ## Architecture
 
+[![Architecture Overview](architecture-overview.png "Architecture Overview")](https://github.com/bzier/gym-mupen64plus/raw/architecture/docs/architecture-overview.png)
+
+
 ### `Mupen64PlusEnv`:
 
 The core `Mupen64PlusEnv` class has been built to handle many of the details of the wrapping and execution of the Mupen64Plus emulator, as well as the implementation of the gym environment. In fact, it inherits from `gym.Env`. The class is abstract and each game environment inherits from it. The game environment subclass provides the ROM path to the base.
