@@ -13,7 +13,7 @@ for i in range(50):
     (obs, rew, end, info) = env.step([0, 0, 1, 0, 0]) # Drive straight
 
 print("Doughnuts!!")
-for i in range(100):
+for i in range(10000):
     if i % 100 == 0:
         print("Step " + str(i))
     (obs, rew, end, info) = env.step([-80, 0, 1, 0, 0]) # Hard-left doughnuts!
