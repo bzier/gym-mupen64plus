@@ -1,6 +1,9 @@
 
 ## Architecture
 
+[![Architecture Overview](architecture-overview.png "Architecture Overview")](https://github.com/bzier/gym-mupen64plus/raw/architecture/docs/architecture-overview.png)
+
+
 ### `Mupen64PlusEnv`:
 
 The core `Mupen64PlusEnv` class has been built to handle many of the details of the wrapping and execution of the Mupen64Plus emulator, as well as the implementation of the gym environment. In fact, it inherits from `gym.Env`. The class is abstract and each game environment inherits from it. The game environment subclass provides the ROM path to the base.
@@ -67,3 +70,9 @@ register(
     nondeterministic=True,
 )
 ```
+
+### Docker Compose:
+
+The project has been updated to be runnable via `docker-compose` (see [running with docker compose](../README.md#running-with-docker-compose)). This runs each of the independent processes in a separate container (a separate docker-compose service). See the [docker-compose.yml](../docker-compose.yml) file for how this is defined.
+
+[![docker-compose containers](architecture-docker-compose.png "docker-compose containers")](https://github.com/bzier/gym-mupen64plus/raw/architecture/docs/architecture-docker-compose.png)
