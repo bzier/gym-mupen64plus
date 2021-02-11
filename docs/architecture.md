@@ -1,7 +1,7 @@
 
 ## Architecture
 
-[![Architecture Overview](architecture-overview.png "Architecture Overview")](https://github.com/bzier/gym-mupen64plus/raw/architecture/docs/architecture-overview.png)
+[![Architecture Overview](architecture-overview.png "Architecture Overview")](https://github.com/bzier/gym-mupen64plus/raw/master/docs/architecture-overview.png)
 
 
 ### `Mupen64PlusEnv`:
@@ -75,4 +75,4 @@ register(
 
 The project has been updated to be runnable via `docker-compose` (see [running with docker compose](../README.md#running-with-docker-compose)). This runs each of the independent processes in a separate container (a separate docker-compose service). See the [docker-compose.yml](../docker-compose.yml) file for how this is defined.
 
-[![docker-compose containers](architecture-docker-compose.png "docker-compose containers")](https://github.com/bzier/gym-mupen64plus/raw/architecture/docs/architecture-docker-compose.png)
+[![docker-compose containers](architecture-docker-compose.png "docker-compose containers")](https://github.com/bzier/gym-mupen64plus/raw/master/docs/architecture-docker-compose.png)
