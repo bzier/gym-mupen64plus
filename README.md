@@ -145,3 +145,4 @@ Here is a list of games that have been wrapped. Each game may support multiple '
 # Additional Documentation:
 
 * [Architecture](docs/architecture.md)
+* [Thread Synchronization](docs/threadSynchronization.md)

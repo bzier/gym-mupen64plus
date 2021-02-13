@@ -1,0 +1,34 @@
+title Thread Synchronization\n(depicted as a single loop)
+
+actor Agent
+ControllerHTTPServer-->*controls_updated\nEvent: (has threading.Event)
+ControllerHTTPServer-->*response_sent\nEvent: (has threading.Event)
+ControllerHTTPServer-->*ControllerRequestHandler: (has nested class)
+
+loop
+    Agent->+ControllerHTTPServer: send_controls(controls)
+    
+    mupen64plus->ControllerRequestHandler: HTTP GET
+    ControllerRequestHandler->+controls_updated\nEvent: wait()
+    
+    ControllerHTTPServer->ControllerHTTPServer: self.controls = controls
+    
+    ControllerHTTPServer->controls_updated\nEvent: set()
+    controls_updated\nEvent-->-ControllerRequestHandler:
+    
+    ControllerHTTPServer->+response_sent\nEvent: wait()
+    
+    ControllerRequestHandler->mupen64plus: write_response(200, server.controls)
+    
+    note over ControllerRequestHandler,mupen64plus
+        until frame skip is satisfied
+        (e.g. 5 responses)
+    end note
+    
+    ControllerRequestHandler->controls_updated\nEvent: clear()
+    ControllerRequestHandler->response_sent\nEvent: set()
+    
+    response_sent\nEvent-->-ControllerHTTPServer:
+    ControllerHTTPServer->response_sent\nEvent: clear()
+    ControllerHTTPServer-->-Agent: (return)
+end
