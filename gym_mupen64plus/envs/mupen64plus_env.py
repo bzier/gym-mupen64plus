@@ -408,29 +408,40 @@ class ControllerHTTPServer(HTTPServer, object):
     def __init__(self, server_address, control_timeout, frame_skip):
         self.control_timeout = control_timeout
         self.controls = ControllerState()
-        self.hold_response = True
+        self.controls_updated = threading.Event()
+        self.response_sent = threading.Event()
         self.running = True
-        self.send_count = 0
+        self.responses_sent = 0
         self.frame_skip = frame_skip
         self.frame_skip_enabled = True
-        self.TEXT_PLAIN_CONTENT_TYPE = "text/plain".encode()
         super(ControllerHTTPServer, self).__init__(server_address, self.ControllerRequestHandler)
 
     def send_controls(self, controls):
-        #print('Send controls called')
-        self.send_count = 0
+        self.responses_sent = 0
         self.controls = controls
-        self.hold_response = False
 
-        # Wait for controls to be sent:
-        #start = time.time()
-        while not self.hold_response: # and time.time() < start + self.control_timeout:
-            time.sleep(MILLISECOND)
+        # Tell the request handler that the controls have been updated so it can send the response now:
+        self.controls_updated.set()
+
+        # Wait for response to actually be sent before returning:
+        if self.running:
+            self.response_sent.wait()
+            self.response_sent.clear()
 
     def shutdown(self):
         self.running = False
-        super(ControllerHTTPServer, self).shutdown()
-        super(ControllerHTTPServer, self).server_close()
+
+        # Make sure we aren't blocking on anything:
+        self.response_sent.set()
+        self.controls_updated.set()
+
+        # Shutdown the server:
+        if PY3_OR_LATER:
+            super().shutdown()
+            super().server_close()
+        else:
+            super(ControllerHTTPServer, self).shutdown()
+            super(ControllerHTTPServer, self).server_close()
 
     # http://preshing.com/20110920/the-python-with-statement-by-example/#implementing-the-context-manager-as-a-generator
     @contextmanager
@@ -446,28 +457,32 @@ class ControllerHTTPServer(HTTPServer, object):
 
         def write_response(self, resp_code, resp_data):
             self.send_response(resp_code)
-            self.send_header("Content-type", self.server.TEXT_PLAIN_CONTENT_TYPE)
+            self.send_header("Content-type", "application/json")
             self.end_headers()
             self.wfile.write(resp_data.encode())
 
         def do_GET(self):
-
-            while self.server.running and self.server.hold_response:
-                time.sleep(MILLISECOND)
+            # Wait for the controls to be updated before responding:
+            if self.server.running:
+                self.server.controls_updated.wait()
 
             if not self.server.running:
                 print('Sending SHUTDOWN response')
                 # TODO: This sometimes fails with a broken pipe because
                 # the emulator has already stopped. Should handle gracefully (Issue #4)
                 self.write_response(500, "SHUTDOWN")
+            else:
+                ### respond with controller output
+                self.write_response(200, self.server.controls.to_json())
 
-            ### respond with controller output
-            self.write_response(200, self.server.controls.to_json())
-            self.server.send_count += 1
+            self.server.responses_sent += 1
 
-            # If we have sent the controls 'n' times, now we block until the next action is sent
-            if self.server.send_count >= self.server.frame_skip or not self.server.frame_skip_enabled:
-                self.server.hold_response = True
-            return
+            # If we have sent the controls 'n' times now...
+            if self.server.responses_sent >= self.server.frame_skip or not self.server.frame_skip_enabled:
+                # ...we fire the response_sent event so the next action can happen:
+                self.server.controls_updated.clear()
+                self.server.response_sent.set()
+
+
 
 ###############################################

@@ -41,7 +41,10 @@ The core `Mupen64PlusEnv` class has been built to handle many of the details of 
 
 ### `ControllerHTTPServer`:
 
-When initialized, will start an HTTP Server listening on the specified port. The server will listen for `GET` requests, but will wait to respond until `send_controls()` is called. Each time `send_controls()` is called, it will block and wait for the `GET` request to be processed (up to a configured timeout). In other words, the emulator will end up waiting indefinitely for a controller action, essentially waiting for an agent to `step()`.
+When initialized, will start an HTTP Server listening on the specified port. The server will listen for `GET` requests, but will wait to respond until `send_controls()` is called. Each time `send_controls()` is called, it will block and wait for the `GET` request to be processed. In other words, the emulator will end up waiting indefinitely for a controller action, essentially waiting for an agent to `step()`.
+
+More details about thread synchronization can be found [here](./threadSynchronization.md).
+
 
 ### `EmulatorMonitor`:
 
