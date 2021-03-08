@@ -67,6 +67,23 @@ class MarioKartEnv(Mupen64PlusEnv):
 
         return super(MarioKartEnv, self)._step(controls)
 
+    def _reset_after_race(self):
+        self._wait(count=275, wait_for='times screen')
+        self._navigate_post_race_menu()
+        self._wait(count=40, wait_for='map select screen')
+        self._navigate_map_select()
+        self._wait(count=50, wait_for='race to load')
+
+    def _reset_during_race(self):
+        # Can't pause the race until the light turns green
+        if (self.step_count * self.controller_server.frame_skip) < 120:
+            steps_to_wait = 100 - (self.step_count * self.controller_server.frame_skip)
+            self._wait(count=steps_to_wait, wait_for='green light so we can pause')
+        self._press_button(ControllerState.START_BUTTON)
+        self._press_button(ControllerState.JOYSTICK_DOWN)
+        self._press_button(ControllerState.A_BUTTON)
+        self._wait(count=76, wait_for='race to load')
+
     def _reset(self):
         
         self.lap = 1
@@ -80,26 +97,13 @@ class MarioKartEnv(Mupen64PlusEnv):
         
         # Nothing to do on the first call to reset()
         if self.reset_count > 0:
-
             # Make sure we don't skip frames while navigating the menus
             with self.controller_server.frame_skip_disabled():
-
                 if self.episode_over:
-                    self._wait(count=275)
-                    self._navigate_post_race_menu()
-                    self._wait(count=40, wait_for='map select screen')
-                    self._navigate_map_select()
-                    self._wait(count=50, wait_for='race to load')
+                    self._reset_after_race()
                     self.episode_over = False
                 else:
-                    # Can't pause the race until the light turns green
-                    if (self.step_count * self.controller_server.frame_skip) < 120:
-                        steps_to_wait = 100 - (self.step_count * self.controller_server.frame_skip)
-                        self._wait(count=steps_to_wait, wait_for='green light so we can pause')
-                    self._press_button(ControllerState.START_BUTTON)
-                    self._press_button(ControllerState.JOYSTICK_DOWN)
-                    self._press_button(ControllerState.A_BUTTON)
-                    self._wait(count=76, wait_for='race to load')
+                    self._reset_during_race()
 
         return super(MarioKartEnv, self)._reset()
 
@@ -266,6 +270,9 @@ class MarioKartEnv(Mupen64PlusEnv):
         # Change HUD View twice to get to the one we want:
         self._cycle_hud_view(times=2)
 
+        # Now that we have the HUD as needed, reset the race so we have a consistent starting frame:
+        self._reset_during_race()
+
     def _navigate_game_select(self):
         # Select number of players (1 player highlighted by default)
         self._press_button(ControllerState.A_BUTTON)
@@ -330,7 +337,7 @@ class MarioKartEnv(Mupen64PlusEnv):
     def _navigate_post_race_menu(self):
         # Times screen
         self._press_button(ControllerState.A_BUTTON)
-        self._wait(count=13)
+        self._wait(count=13, wait_for='Post race menu')
 
         # Post race menu (previous choice selected by default)
         # - Retry
