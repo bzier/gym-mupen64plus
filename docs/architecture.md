@@ -22,13 +22,13 @@ The core `Mupen64PlusEnv` class has been built to handle many of the details of 
     * *Note:* certain game environments may choose to override this default action space to provide options more suited for the specific game (details should be noted in the respective game's README)
 
 #### Methods:
-* `_step(action)` handles taking the supplied action, passing it to the controller server, and reading the new `observation`, `reward`, and `end_episode` values.
+* `step(action)` handles taking the supplied action, passing it to the controller server, and reading the new `observation`, `reward`, and `end_episode` values.
 
-* `_observe()` grabs a screenshot of the emulator window and returns the pixel data as a numpy array.
+* `observe()` grabs a screenshot of the emulator window and returns the pixel data as a numpy array.
 
-* `_render()` returns the image or opens a viewer depending on the specified mode. Note that calling `_render()` inside a container currently interferes with the emulator display causing the screen to appear frozen, and should be avoided.
+* `render()` returns the image or opens a viewer depending on the specified mode. Note that calling `_render()` inside a container currently interferes with the emulator display causing the screen to appear frozen, and should be avoided.
 
-* `_close()` shuts down the environment: stops the emulator, and stops the controller server.
+* `close()` shuts down the environment: stops the emulator, and stops the controller server.
 
 * Abstract methods that each game environment must implement:
     * `_navigate_menu()` moves through the game menu from startup to the beginning of an episode.
@@ -37,7 +37,7 @@ The core `Mupen64PlusEnv` class has been built to handle many of the details of 
 
     * `_evaluate_end_state()` determines whether or not the episode is over.
 
-    * `_reset()` resets the environment to begin a new episode.
+    * `reset()` resets the environment to begin a new episode.
 
 ### `ControllerHTTPServer`:
 

@@ -13,11 +13,8 @@ for character in characters:
         id='Smash-%s-v0' % character,
         entry_point='gym_mupen64plus.envs.Smash:SmashEnv',
         kwargs={'my_character' : character},
-        tags={
-            'mupen': True,
-            'wrapper_config.TimeLimit.max_episode_steps': 2147483647,
-        },
         nondeterministic=True,
+        max_episode_steps=2147483647
     )
 
     # Discrete Action Space:
@@ -25,9 +22,6 @@ for character in characters:
         id='Smash-Discrete-%s-v0' % character,
         entry_point='gym_mupen64plus.envs.Smash:SmashDiscreteEnv',
         kwargs={'my_character' : character},
-        tags={
-            'mupen': True,
-            'wrapper_config.TimeLimit.max_episode_steps': 2147483647,
-        },
         nondeterministic=True,
+        max_episode_steps=2147483647
     )

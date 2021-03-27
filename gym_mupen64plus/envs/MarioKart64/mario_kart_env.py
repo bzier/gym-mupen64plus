@@ -45,27 +45,32 @@ class MarioKartEnv(Mupen64PlusEnv):
         super(MarioKartEnv, self).__init__()
 
         self.end_race_pixel_color = self.END_RACE_PIXEL_COLORS[self.config["GFX_PLUGIN"]]
-        
-        self.action_space = spaces.MultiDiscrete([[-80, 80],  # Joystick X-axis
-                                                  [-80, 80],  # Joystick Y-axis
-                                                  [  0,  1],  # A Button
-                                                  [  0,  1],  # B Button
-                                                  [  0,  1]]) # RB Button
+
+        # Actions are as follows:
+        # [Joystick X-axis, Joystick Y-axis, A Button, B Button, RB Button]
+        self.action_space = spaces.Box(np.array([-80, -80, 0, 0, 0]),
+                                       np.array([80, 80, 1, 1, 1]),
+                                       dtype=np.int8)
 
     def _load_config(self):
         self.config.update(yaml.safe_load(open(os.path.join(os.path.dirname(inspect.stack()[0][1]), "mario_kart_config.yml"))))
-        
+
     def _validate_config(self):
         print("validate sub")
         gfx_plugin = self.config["GFX_PLUGIN"]
         if gfx_plugin not in self.END_RACE_PIXEL_COLORS:
             raise AssertionError("Video Plugin '" + gfx_plugin + "' not currently supported by MarioKart environment")
 
-    def _step(self, action):
+    def get_action_meanings(self):
+        return ['NOOP']
+
+    def step(self, action):
         # Interpret the action choice and get the actual controller state for this step
+        if type(action) != list:
+            action = action.tolist()
         controls = action + [  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
 
-        return super(MarioKartEnv, self)._step(controls)
+        return super(MarioKartEnv, self).step(controls)
 
     def _reset_after_race(self):
         self._wait(count=275, wait_for='times screen')
@@ -84,17 +89,16 @@ class MarioKartEnv(Mupen64PlusEnv):
         self._press_button(ControllerState.A_BUTTON)
         self._wait(count=76, wait_for='race to load')
 
-    def _reset(self):
-        
+    def reset(self):
         self.lap = 1
         self.step_count_at_lap = 0
         self.last_known_lap = -1
 
-        self.CHECKPOINT_LOCATIONS = list(self._generate_checkpoints(64, 36, 584, 444)) 
+        self.CHECKPOINT_LOCATIONS = list(self._generate_checkpoints(64, 36, 584, 444))
         if self.ENABLE_CHECKPOINTS:
             self._checkpoint_tracker = [[False for i in range(len(self.CHECKPOINT_LOCATIONS))] for j in range(3)]
             self.last_known_ckpt = -1
-        
+
         # Nothing to do on the first call to reset()
         if self.reset_count > 0:
             # Make sure we don't skip frames while navigating the menus
@@ -105,7 +109,7 @@ class MarioKartEnv(Mupen64PlusEnv):
                 else:
                     self._reset_during_race()
 
-        return super(MarioKartEnv, self)._reset()
+        return super(MarioKartEnv, self).reset()
 
     def _get_reward(self):
         #cprint('Get Reward called!','yellow')
@@ -141,7 +145,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
             elif (self.ENABLE_CHECKPOINTS and ( cur_lap < self.last_known_lap or
                                                cur_ckpt < self.last_known_ckpt)):
-                
+
                 #cprint(str(self.step_count) + ': BACKWARDS!!', 'red')
                 self._checkpoint_tracker[self.lap - 1][self.last_known_ckpt] = False
                 reward_to_return = self.BACKWARDS_PUNISHMENT
@@ -178,7 +182,7 @@ class MarioKartEnv(Mupen64PlusEnv):
             x_val = max_x
             y_val = min_y + i*2
             yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
-        
+
         # Bottom
         for i in range((max_x - min_x) // 2):
             if i == 0: # Skip the bottom right corner (for some reason MK doesn't draw it)
@@ -186,7 +190,7 @@ class MarioKartEnv(Mupen64PlusEnv):
             x_val = max_x - i*2
             y_val = max_y
             yield [(x_val, y_val), (x_val + 1, y_val), (x_val, y_val + 1), (x_val + 1, y_val + 1)]
-        
+
         # Left-side
         for i in range((max_y - min_y) // 2):
             x_val = min_x
@@ -199,7 +203,7 @@ class MarioKartEnv(Mupen64PlusEnv):
 
         # Check if we have achieved any checkpoints
         if any(val > -1 for val in checkpoint_values):
-            
+
             # argmin tells us the first index with the lowest value
             index_of_lowest_val = np.argmin(checkpoint_values)
 
@@ -211,7 +215,7 @@ class MarioKartEnv(Mupen64PlusEnv):
                 # If the argmin is at index 0, they are all the same value,
                 # which means we've hit all the checkpoints for this lap
                 checkpoint = len(checkpoint_values) - 1
-            
+
             #if self.last_known_ckpt != checkpoint:
             #    cprint('--------------------------------------------','red')
             #    cprint('Checkpoints: %s' % checkpoint_values, 'yellow')
@@ -223,8 +227,8 @@ class MarioKartEnv(Mupen64PlusEnv):
             return -1
 
     # https://stackoverflow.com/a/3844948
-    # Efficiently determines if all items in a list are equal by 
-    # counting the occurrences of the first item in the list and 
+    # Efficiently determines if all items in a list are equal by
+    # counting the occurrences of the first item in the list and
     # checking if the count matches the length of the list:
     def all_equal(self, some_list):
         return some_list.count(some_list[0]) == len(some_list)
@@ -234,7 +238,7 @@ class MarioKartEnv(Mupen64PlusEnv):
                              for point in checkpoint_points]
 
         #print(checkpoint_pixels)
-        
+
         # If the first pixel is not a valid color, no need to check the other three
         if not checkpoint_pixels[0] in self.HUD_PROGRESS_COLOR_VALUES:
             return -1
@@ -266,7 +270,7 @@ class MarioKartEnv(Mupen64PlusEnv):
         self._navigate_map_select()
 
         self._wait(count=46, wait_for='race to load')
-        
+
         # Change HUD View twice to get to the one we want:
         self._cycle_hud_view(times=2)
 
