@@ -65,6 +65,7 @@ RUN wget "https://sourceforge.net/projects/virtualgl/files/${VIRTUALGL_VERSION}/
 
 # Install dependencies (here for caching)
 RUN pip install \
+    pyglet==1.4.0 \
     gym==0.7.4 \
     numpy==1.16.2 \
     PyYAML==5.1 \
