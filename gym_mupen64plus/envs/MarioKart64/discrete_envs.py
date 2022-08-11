@@ -4,7 +4,7 @@ from gym import spaces
 
 class DiscreteActions:
     ACTION_MAP = [
-        ("NO_OP",         [  0,   0, 0, 0, 0]),
+        ("NOOP",          [  0,   0, 0, 0, 0]),
         ("STRAIGHT",      [  0,   0, 1, 0, 0]),
         ("BRAKE",         [  0,   0, 0, 1, 0]),
         ("BACK_UP",       [  0, -80, 0, 1, 0]),
@@ -37,8 +37,8 @@ class MarioKartDiscreteEnv(MarioKartEnv):
         # This needs to happen after the parent class init to effectively override the action space
         self.action_space = DiscreteActions.get_action_space()
 
-    def _step(self, action):
+    def step(self, action):
         # Interpret the action choice and get the actual controller state for this step
         controls = DiscreteActions.get_controls_from_action(action)
 
-        return super(MarioKartDiscreteEnv, self)._step(controls)
+        return super(MarioKartDiscreteEnv, self).step(controls)

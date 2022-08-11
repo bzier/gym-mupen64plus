@@ -121,7 +121,7 @@ This file contains definitions for subclasses of `MarioKartEnv` which provide en
 
 ### Action Space:
 The default environments use the existing base class provided action space (see the [initialization](../../../docs/architecture.md#initialization) section of the architecture doc for details). However, there are also discrete versions of these environments as well (as of 2017.11.10, only Luigi Raceway has been added). This is well-suited for AI agents that are designed to produce a [1-hot](https://machinelearningmastery.com/how-to-one-hot-encode-sequence-data-in-python/) type output. It allows the agent to pick the 'appropriate' action from a set rather than directly outputting the controller state. The discrete action space provides the following 12 options:
-* NO_OP
+* NOOP
 * Straight
 * Brake
 * Back-up
